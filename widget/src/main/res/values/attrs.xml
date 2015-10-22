@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CustomScrollView">
+        <attr name="cs_item_width" format="integer"/>
+        <attr name="cs_item_height" format="integer"/>
+        <attr name="cs_item_large_width" format="integer"/>
+        <attr name="cs_item_large_height" format="integer"/>
+        <attr name="cs_item_margin" format="integer"/>
+        <attr name="cs_item_scroll_factor" format="float"/>
+    </declare-styleable>
+</resources>

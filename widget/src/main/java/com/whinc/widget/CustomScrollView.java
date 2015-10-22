@@ -1,6 +1,5 @@
 package com.whinc.widget;
 
-import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -23,6 +22,7 @@ public class CustomScrollView extends FrameLayout{
     private static final String TAG = CustomScrollView.class.getSimpleName();
     private static final int DURATION = 500;        // ms
 
+    /* XML layout attributes */
     private int mWidth;
     private int mHeight;
     private int mItemWidth;
@@ -30,6 +30,7 @@ public class CustomScrollView extends FrameLayout{
     private int mItemMargin;
     private int mItemLargeWidth;
     private int mItemLargeHeight;
+
     private int mItemLargeIndex;
     private Interpolator mInterpolator = null;
     private Context mContext;

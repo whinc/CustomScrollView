@@ -19,9 +19,16 @@ android {
     }
 }
 
+repositories {
+    maven {
+        url 'https://dl.bintray.com/whinc/maven'
+    }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:22.1.0'
     compile 'com.jakewharton:butterknife:7.0.1'
-    compile project(':widget')
+    compile 'com.whinc.widget:customscrollview:1.0.0'
+//    compile project(':widget')
 }

@@ -1,0 +1,54 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <com.whinc.widget.CustomScrollView
+        android:id="@+id/custom_scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+   <LinearLayout
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="horizontal"
+       android:layout_alignParentBottom="true"
+       >
+       <Button
+           android:id="@+id/add_1_item_button"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="Add 1 Item"
+           android:textAllCaps="false"
+           android:layout_margin="5px"
+           android:background="@drawable/btn_selector"
+           />
+       <Button
+           android:id="@+id/add_2_item_button"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="Add 2 Item"
+           android:textAllCaps="false"
+           android:layout_margin="5px"
+           android:background="@drawable/btn_selector"
+           />
+       <Button
+           android:id="@+id/add_3_item_button"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="Add 3 Item"
+           android:textAllCaps="false"
+           android:layout_margin="5px"
+           android:background="@drawable/btn_selector"
+           />
+       <Button
+           android:id="@+id/add_8_item_button"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="Add 8 Item"
+           android:textAllCaps="false"
+           android:layout_margin="5px"
+           android:background="@drawable/btn_selector"
+           />
+   </LinearLayout>
+</RelativeLayout>

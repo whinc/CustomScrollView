@@ -2,8 +2,11 @@ package com.whinc.customscrollview;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import com.whinc.widget.CustomScrollView;
 
@@ -21,17 +24,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        mCustomScrollView.setInterpolator(new OvershootInterpolator());
     }
 
-    @OnClick({R.id.add_1_item_button, R.id.add_2_item_button, R.id.add_3_item_button, R.id.add_8_item_button})
+    @OnClick({R.id.add_item_button, R.id.add_3_item_button, R.id.add_8_item_button})
     protected void addItem(Button btn) {
         int n = 0;
         switch (btn.getId()) {
-            case R.id.add_1_item_button:
+            case R.id.add_item_button:
                 n = 1;
-                break;
-            case R.id.add_2_item_button:
-                n = 2;
                 break;
             case R.id.add_3_item_button:
                 n = 3;
@@ -40,8 +41,25 @@ public class MainActivity extends AppCompatActivity {
                 n = 8;
                 break;
         }
+//        mCustomScrollView.addItems(n);
+        final int finalN = n;
+        mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
+            @Override
+            public int getCount() {
+                return finalN;
+            }
+
+            @Override
+            public View getView(ViewGroup parent) {
+                View view = new ImageView(MainActivity.this);
+                view.setBackgroundResource(R.drawable.image);
+                return view;
+            }
+        });
+    }
+
+    @OnClick(R.id.clear_item_button)
+    protected void clearItems() {
         mCustomScrollView.clearItems();
-        mCustomScrollView.setInterpolator(new OvershootInterpolator());
-        mCustomScrollView.addItem(n);
     }
 }

@@ -24,19 +24,19 @@
        android:layout_alignParentBottom="true"
        >
        <Button
-           android:id="@+id/add_1_item_button"
+           android:id="@+id/add_item_button"
            android:layout_width="wrap_content"
            android:layout_height="wrap_content"
-           android:text="Add 1 Item"
+           android:text="Add Item"
            android:textAllCaps="false"
            android:layout_margin="5px"
            android:background="@drawable/btn_selector"
            />
        <Button
-           android:id="@+id/add_2_item_button"
+           android:id="@+id/clear_item_button"
            android:layout_width="wrap_content"
            android:layout_height="wrap_content"
-           android:text="Add 2 Item"
+           android:text="Clear Items"
            android:textAllCaps="false"
            android:layout_margin="5px"
            android:background="@drawable/btn_selector"

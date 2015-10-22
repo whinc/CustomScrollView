@@ -17,7 +17,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
@@ -46,17 +45,19 @@ public class CustomScrollView extends FrameLayout{
      */
     private float mScrollFactor = DEFAULT_SCROLL_FACTOR;
 
-    private int mItemLargeIndex;
+    private int mItemLargeIndex = -1;
     private Interpolator mInterpolator = null;
     private Context mContext;
     private int mTranslationX = 0;
     private GestureDetector mGestureDetector;
     private ValueAnimator mAnimator;
+    private Adapter mAdapter;
 
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
     }
+
     public CustomScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
@@ -66,11 +67,42 @@ public class CustomScrollView extends FrameLayout{
         super(context, attrs, defStyleAttr);
         init(context, attrs);
     }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    public Adapter getAdapter() {
+        return mAdapter;
+    }
+
+    public void setAdapter(Adapter adapter) {
+        // remove items
+        clearItems();
+
+        if (adapter == null) {
+            mAdapter = null;
+            return;
+        }
+
+        mAdapter = adapter;
+
+        int count = adapter.getCount();
+        for (int i = 0; i < count; ++i) {
+            View view = adapter.getView(this);
+            if (view != null) {
+                // Rect in view tag used to recode size and coordinate of view
+                view.setTag(new Rect(0, 0, 0, 0));
+                addView(view);
+            }
+        }
+        if (getChildCount() > 0) {
+            mItemLargeIndex = getChildCount() / 2;
+            adjustItemSize(mItemLargeIndex);
+            mTranslationX = getTranslateX(mItemLargeIndex);
+            requestLayout();
+        }
     }
 
     /** Called when scroll current view */
@@ -265,6 +297,9 @@ public class CustomScrollView extends FrameLayout{
     }
 
     private void playAnimation() {
+        if (getChildCount() <= 0) {
+            return;
+        }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
         Rect centerRect = (Rect)getChildAt(mItemLargeIndex).getTag();
@@ -307,40 +342,12 @@ public class CustomScrollView extends FrameLayout{
         }
     }
 
-    public void addItem(int n) {
-        if (n <= 0) {
-            return;
-        }
-
-        for (int i = 0; i < n; ++i) {
-            // create View
-            ImageView child = new ImageView(mContext);
-            child.setBackgroundResource(R.drawable.image);
-            addView(child);
-
-            // create layout Rect
-            int itemLeft = i * getItemWM() + mItemMargin;
-            Rect rect = new Rect(0, 0, 0, 0);
-            if (i < n / 2) {
-                rect.set(itemLeft, mHeight - mItemHeight, itemLeft + mItemWidth, mHeight);
-            } else if (i > n / 2) {
-                itemLeft = (i - 1) * getItemWM() + getLargeItemWM() + mItemMargin;
-                rect.set(itemLeft, mHeight - mItemHeight, itemLeft + mItemWidth, mHeight);
-            } else {
-                rect.set(itemLeft, mHeight - mItemLargeHeight, itemLeft + mItemLargeWidth, mHeight);
-            }
-            child.setTag(rect);
-        }
-
-        mItemLargeIndex = n / 2;
-        mTranslationX = getTranslateX(mItemLargeIndex);
-        requestLayout();
-    }
-
     /** Remove all child items  */
     public void clearItems() {
         if (getChildCount() > 0) {
+            mItemLargeIndex = -1;
             removeAllViewsInLayout();
+            invalidate();
         }
     }
 
@@ -405,5 +412,10 @@ public class CustomScrollView extends FrameLayout{
                 rect.set(itemLeft, mHeight - mItemLargeHeight, itemLeft + mItemLargeWidth, mHeight);
             }
         }
+    }
+
+    public interface Adapter {
+        int getCount();
+        View getView(ViewGroup parent);
     }
 }

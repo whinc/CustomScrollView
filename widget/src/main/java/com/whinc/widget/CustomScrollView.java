@@ -113,6 +113,19 @@ public class CustomScrollView extends FrameLayout{
         }
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        if (mWidth <= 0) {      // store measured size
+            mWidth = getMeasuredWidth();
+            mHeight = getMeasuredHeight();
+            if (!isInEditMode()) {
+                update();
+            }
+        }
+    }
+
     /** Called when scroll current view */
     private boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (Math.abs(distanceX) < 1) {
@@ -234,13 +247,6 @@ public class CustomScrollView extends FrameLayout{
         mInterpolator = interpolator;
     }
 
-    /** Called when ScrollView completes measure, then you can get its measured size */
-    private void onMeasured() {
-        mWidth = getMeasuredWidth();
-        mHeight = getMeasuredHeight();
-        update();
-    }
-
     private void init(Context context, AttributeSet attrs) {
         if (isInEditMode()) {
             TextView textView = new TextView(context);
@@ -290,14 +296,6 @@ public class CustomScrollView extends FrameLayout{
                 } else {
                     return CustomScrollView.this.onScroll(e1, e2, distanceX, distanceY);
                 }
-            }
-        });
-
-        // Send onMeasured() message on ScrollView completes measure
-        post(new Runnable() {
-            @Override
-            public void run() {
-                onMeasured();
             }
         });
     }

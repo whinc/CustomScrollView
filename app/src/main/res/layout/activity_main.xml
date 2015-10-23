@@ -6,59 +6,74 @@
     android:layout_height="match_parent"
     >
 
-    <com.whinc.widget.CustomScrollView
-        android:id="@+id/custom_scrollView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:cs_item_width="200"
-        app:cs_item_height="240"
-        app:cs_item_large_width="350"
-        app:cs_item_large_height="450"
-        app:cs_item_margin="20"
-        app:cs_item_scroll_factor="0.5"
-        app:cs_item_touch_diff="40"
-        />
-   <LinearLayout
-       android:layout_width="match_parent"
-       android:layout_height="wrap_content"
-       android:orientation="horizontal"
-       android:layout_alignParentBottom="true"
-       >
-       <Button
-           android:id="@+id/add_item_button"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:text="Add Item"
-           android:textAllCaps="false"
-           android:layout_margin="5px"
-           android:background="@drawable/btn_selector"
-           />
-       <Button
-           android:id="@+id/clear_item_button"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:text="Clear Items"
-           android:textAllCaps="false"
-           android:layout_margin="5px"
-           android:background="@drawable/btn_selector"
-           />
-       <Button
-           android:id="@+id/add_3_item_button"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:text="Add 3 Item"
-           android:textAllCaps="false"
-           android:layout_margin="5px"
-           android:background="@drawable/btn_selector"
-           />
-       <Button
-           android:id="@+id/add_8_item_button"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:text="Add 8 Item"
-           android:textAllCaps="false"
-           android:layout_margin="5px"
-           android:background="@drawable/btn_selector"
-           />
-   </LinearLayout>
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        >
+        <com.whinc.widget.CustomScrollView
+            android:id="@+id/custom_scrollView"
+            android:layout_width="675px"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:cs_item_width="200px"
+            app:cs_item_height="240px"
+            app:cs_item_large_width="350px"
+            app:cs_item_large_height="450px"
+            app:cs_item_margin="20px"
+            app:cs_item_scroll_factor="0.5"
+            app:cs_item_touch_diff="40px"
+            android:background="@android:color/holo_purple"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            >
+
+            <Button
+                android:id="@+id/add_item_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Item"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                android:background="@drawable/btn_selector"
+                />
+
+            <Button
+                android:id="@+id/clear_item_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear Items"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                android:background="@drawable/btn_selector"
+                />
+
+            <Button
+                android:id="@+id/add_3_item_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add 3 Item"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                android:background="@drawable/btn_selector"
+                />
+
+            <Button
+                android:id="@+id/add_8_item_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add 8 Item"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                android:background="@drawable/btn_selector"
+                />
+        </LinearLayout>
+    </LinearLayout>
+
 </RelativeLayout>

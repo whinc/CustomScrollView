@@ -35,18 +35,25 @@ public class CustomScrollView extends FrameLayout{
     private static final boolean DEBUG = true;
 
     /* XML layout attributes */
+    /** Width of ScrollView */
     private int mWidth;
+    /** Height of ScrollView */
     private int mHeight;
+    /** Width of item in ScrollView */
     private int mItemWidth;
+    /** Height of item in ScrollView */
     private int mItemHeight;
+    /** Spacing between each item in ScrollView */
     private int mItemMargin;
+    /** Width of large item in ScrollView */
     private int mItemLargeWidth;
+    /** Height of large item in ScrollView */
     private int mItemLargeHeight;
-    // when scroll distance large than mTouchDiff, ScrollView scroll to next item
+    /** When scroll distance(from touch down to touch up) large than mTouchDiff, scroll to next item  */
     private int mTouchDiff;
+    /** Affect the scroll speed, the more large this value scroll more faster */
+    private float mScrollFactor;
 
-    /* Scroll distance received by onScroll Method equal to real scroll distance multiple scroll factor */
-    private float mScrollFactor = DEFAULT_SCROLL_FACTOR;
     private int mItemLargeIndex = -1;
     private Interpolator mInterpolator = null;
     private Context mContext;
@@ -99,10 +106,6 @@ public class CustomScrollView extends FrameLayout{
                 addView(view);
             }
         }
-        if (getChildCount() > 0) {
-            mItemLargeIndex = getChildCount() / 2;
-            mTranslationX = getTranslateX(mItemLargeIndex);
-        }
     }
 
     /** Called when scroll current view */
@@ -118,10 +121,10 @@ public class CustomScrollView extends FrameLayout{
         View activeView = getChildAt(mItemLargeIndex);
         Rect rect = (Rect) activeView.getTag();
         int itemCenterX = mTranslationX + rect.left + rect.width()/2;
-        int screenCenterX = mContext.getResources().getDisplayMetrics().widthPixels / 2;
-        if (itemCenterX < screenCenterX) {          // left of screen center line
+        int centerLine = mWidth / 2;
+        if (itemCenterX < centerLine) {          // locate in left side of CustomScrollView
             if (mItemLargeIndex < childCount - 1) {
-                if (distanceX > 0) {        // scroll left
+                if (distanceX > 0) {            // scroll left
                     // 中间item向左下方扩展，左边固定
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
@@ -164,9 +167,9 @@ public class CustomScrollView extends FrameLayout{
                     print("right", rect2);
                 }
             }
-        } else if (itemCenterX > screenCenterX) {   // right of screen center line
+        } else if (itemCenterX > centerLine) {      // locate in right side of CustomScrollView
             if (mItemLargeIndex > 0) {
-                if (distanceX > 0) {            // scroll left
+                if (distanceX > 0) {                // scroll left
                     // 中间item向左上方扩展，右边固定
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
@@ -225,19 +228,21 @@ public class CustomScrollView extends FrameLayout{
         mInterpolator = interpolator;
     }
 
-    private void init(Context context, AttributeSet attrs) {
-        // Measure CustomScrollView size
-        post(new Runnable() {
-            @Override
-            public void run() {
-                mWidth = getMeasuredWidth();
-                mHeight = getMeasuredHeight();
-                // adjust item size on get scrollview measured size
-                adjustItemSize(mItemLargeIndex);
-                requestLayout();
-            }
-        });
+    /** Called when ScrollView completes measure, then you can get its measured size */
+    private void onMeasured() {
+        mWidth = getMeasuredWidth();
+        mHeight = getMeasuredHeight();
 
+        if (getChildCount() > 0) {
+            mItemLargeIndex = getChildCount() / 2;
+            mTranslationX = getTranslateX(mItemLargeIndex);
+            // adjust item size on get scrollview measured size
+            adjustItemSize(mItemLargeIndex);
+            requestLayout();
+        }
+    }
+
+    private void init(Context context, AttributeSet attrs) {
         if (isInEditMode()) {
             TextView textView = new TextView(context);
             textView.setText(TAG);
@@ -263,15 +268,16 @@ public class CustomScrollView extends FrameLayout{
             mTouchDiff = DEFAULT_TOUCH_DIFF;
         } else {
             TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomScrollView);
-            mItemWidth = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_width, DEFAULT_ITEM_WIDTH);
-            mItemHeight = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_height, DEFAULT_ITEM_HEIGHT);
-            mItemMargin = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_margin, DEFAULT_ITEM_MARGIN);
-            mItemLargeWidth = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_large_width, DEFAULT_ITEM_LARGE_WIDTH);
-            mItemLargeHeight = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_large_height, DEFAULT_ITEM_LARGE_HEIGHT);
+            mItemWidth = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_width, DEFAULT_ITEM_WIDTH);
+            mItemHeight = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_height, DEFAULT_ITEM_HEIGHT);
+            mItemMargin = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_margin, DEFAULT_ITEM_MARGIN);
+            mItemLargeWidth = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_large_width, DEFAULT_ITEM_LARGE_WIDTH);
+            mItemLargeHeight = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_large_height, DEFAULT_ITEM_LARGE_HEIGHT);
             mScrollFactor = typedArray.getFloat(R.styleable.CustomScrollView_cs_item_scroll_factor, DEFAULT_SCROLL_FACTOR);
-            mTouchDiff = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_touch_diff, DEFAULT_TOUCH_DIFF);
+            mTouchDiff = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_touch_diff, DEFAULT_TOUCH_DIFF);
             mTouchDiff = Math.min(mTouchDiff, mItemLargeWidth - mItemWidth);
-            log("touch diff:" + mTouchDiff);
+            log("item width:" + mItemWidth + " px");
+            log("touch diff:" + mTouchDiff + " px");
             typedArray.recycle();
         }
 
@@ -285,6 +291,14 @@ public class CustomScrollView extends FrameLayout{
                 } else {
                     return CustomScrollView.this.onScroll(e1, e2, distanceX, distanceY);
                 }
+            }
+        });
+
+        // Send onMeasured() message on ScrollView completes measure
+        post(new Runnable() {
+            @Override
+            public void run() {
+                onMeasured();
             }
         });
     }
@@ -370,8 +384,7 @@ public class CustomScrollView extends FrameLayout{
             throw new IllegalArgumentException(
                     String.format("Invalid argument n: %d ,n must be in [0, %d]", n, getChildCount()-1));
         }
-        int screenWidth = mContext.getResources().getDisplayMetrics().widthPixels;
-        int startX = screenWidth / 2;
+        int startX = mWidth / 2;
         startX -= getLargeItemWM()/2;
         if (n > 0) {
             startX -= (getItemWM() * n);

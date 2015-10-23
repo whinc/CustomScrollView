@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="CustomScrollView">
-        <attr name="cs_item_width" format="integer"/>
-        <attr name="cs_item_height" format="integer"/>
-        <attr name="cs_item_large_width" format="integer"/>
-        <attr name="cs_item_large_height" format="integer"/>
-        <attr name="cs_item_margin" format="integer"/>
+        <attr name="cs_item_width" format="dimension"/>
+        <attr name="cs_item_height" format="dimension"/>
+        <attr name="cs_item_large_width" format="dimension"/>
+        <attr name="cs_item_large_height" format="dimension"/>
+        <attr name="cs_item_margin" format="dimension"/>
         <attr name="cs_item_scroll_factor" format="float"/>
-        <attr name="cs_item_touch_diff" format="integer"/>
+        <attr name="cs_item_touch_diff" format="dimension"/>
     </declare-styleable>
 </resources>

@@ -31,6 +31,8 @@ public class CustomScrollView extends FrameLayout{
     private static final int DEFAULT_ITEM_LARGE_WIDTH = DEFAULT_ITEM_WIDTH * 2;
     private static final int DEFAULT_ITEM_LARGE_HEIGHT = DEFAULT_ITEM_HEIGHT * 2;
     private static final float DEFAULT_SCROLL_FACTOR = 0.5f;
+    private static final int DEFAULT_TOUCH_DIFF = 20;
+    private static final boolean DEBUG = true;
 
     /* XML layout attributes */
     private int mWidth;
@@ -40,11 +42,11 @@ public class CustomScrollView extends FrameLayout{
     private int mItemMargin;
     private int mItemLargeWidth;
     private int mItemLargeHeight;
-    /**
-     * Scroll distance received by onScroll Method equal to real scroll distance multiple scroll factor
-     */
-    private float mScrollFactor = DEFAULT_SCROLL_FACTOR;
+    // when scroll distance large than mTouchDiff, ScrollView scroll to next item
+    private int mTouchDiff;
 
+    /* Scroll distance received by onScroll Method equal to real scroll distance multiple scroll factor */
+    private float mScrollFactor = DEFAULT_SCROLL_FACTOR;
     private int mItemLargeIndex = -1;
     private Interpolator mInterpolator = null;
     private Context mContext;
@@ -99,9 +101,7 @@ public class CustomScrollView extends FrameLayout{
         }
         if (getChildCount() > 0) {
             mItemLargeIndex = getChildCount() / 2;
-            adjustItemSize(mItemLargeIndex);
             mTranslationX = getTranslateX(mItemLargeIndex);
-            requestLayout();
         }
     }
 
@@ -191,7 +191,7 @@ public class CustomScrollView extends FrameLayout{
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left += Math.round(deltaX);
                     rect1.top += Math.round(deltaY);
-                    Log.i(TAG, String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
+                    log(String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
                     print("center", rect1);
 
                     // 左侧item向右上方扩展，左边固定
@@ -232,6 +232,9 @@ public class CustomScrollView extends FrameLayout{
             public void run() {
                 mWidth = getMeasuredWidth();
                 mHeight = getMeasuredHeight();
+                // adjust item size on get scrollview measured size
+                adjustItemSize(mItemLargeIndex);
+                requestLayout();
             }
         });
 
@@ -257,6 +260,7 @@ public class CustomScrollView extends FrameLayout{
             mItemLargeWidth = DEFAULT_ITEM_LARGE_WIDTH;
             mItemLargeHeight = DEFAULT_ITEM_LARGE_HEIGHT;
             mScrollFactor = DEFAULT_SCROLL_FACTOR;
+            mTouchDiff = DEFAULT_TOUCH_DIFF;
         } else {
             TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomScrollView);
             mItemWidth = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_width, DEFAULT_ITEM_WIDTH);
@@ -265,6 +269,9 @@ public class CustomScrollView extends FrameLayout{
             mItemLargeWidth = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_large_width, DEFAULT_ITEM_LARGE_WIDTH);
             mItemLargeHeight = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_large_height, DEFAULT_ITEM_LARGE_HEIGHT);
             mScrollFactor = typedArray.getFloat(R.styleable.CustomScrollView_cs_item_scroll_factor, DEFAULT_SCROLL_FACTOR);
+            mTouchDiff = typedArray.getInteger(R.styleable.CustomScrollView_cs_item_touch_diff, DEFAULT_TOUCH_DIFF);
+            mTouchDiff = Math.min(mTouchDiff, mItemLargeWidth - mItemWidth);
+            log("touch diff:" + mTouchDiff);
             typedArray.recycle();
         }
 
@@ -273,7 +280,7 @@ public class CustomScrollView extends FrameLayout{
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 if (getChildCount() <= 0) {
-                    Log.i(TAG, "Has no child view!");
+                    log("Has no child view!");
                     return true;
                 } else {
                     return CustomScrollView.this.onScroll(e1, e2, distanceX, distanceY);
@@ -302,20 +309,25 @@ public class CustomScrollView extends FrameLayout{
         }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
+        int newIndex = mItemLargeIndex;
         Rect centerRect = (Rect)getChildAt(mItemLargeIndex).getTag();
         if (mItemLargeIndex > 0) {
             Rect leftRect = (Rect)getChildAt(mItemLargeIndex - 1).getTag();
-            if (centerRect.width() < leftRect.width()) {
-                mItemLargeIndex -= 1;
+            if (centerRect.width() < (mItemLargeWidth - mTouchDiff)
+                    && leftRect.width() > mItemWidth) {
+                newIndex = mItemLargeIndex - 1;
             }
         }
         if (mItemLargeIndex < getChildCount() - 1) {
             Rect rightRect = (Rect)getChildAt(mItemLargeIndex + 1).getTag();
-            if (centerRect.width() < rightRect.width()) {
-                mItemLargeIndex += 1;
+            if (centerRect.width() < (mItemLargeWidth - mTouchDiff)
+                    && rightRect.width() > mItemWidth) {
+                newIndex = mItemLargeIndex + 1;
             }
         }
-        Log.i(TAG, "item large index:" + mItemLargeIndex);
+        mItemLargeIndex = newIndex;
+
+        log("item large index:" + mItemLargeIndex);
         adjustItemSize(mItemLargeIndex);
 
         final int destTranslationX = getTranslateX(mItemLargeIndex);
@@ -393,7 +405,7 @@ public class CustomScrollView extends FrameLayout{
     }
 
     private void print(String msg, Rect rect) {
-        Log.i(TAG, String.format("%s, l=%d, r=%d, w=%d, h=%d", msg,
+        log(String.format("%s, l=%d, r=%d, w=%d, h=%d", msg,
                 rect.left, rect.right, rect.width(), rect.height()));
     }
 
@@ -411,6 +423,12 @@ public class CustomScrollView extends FrameLayout{
             } else {
                 rect.set(itemLeft, mHeight - mItemLargeHeight, itemLeft + mItemLargeWidth, mHeight);
             }
+        }
+    }
+
+    private void log(String msg) {
+        if (DEBUG) {
+            Log.i(TAG, msg);
         }
     }
 

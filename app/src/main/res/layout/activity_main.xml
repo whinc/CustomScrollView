@@ -10,12 +10,13 @@
         android:id="@+id/custom_scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:cs_item_width="100"
-        app:cs_item_height="200"
-        app:cs_item_large_width="300"
-        app:cs_item_large_height="600"
+        app:cs_item_width="200"
+        app:cs_item_height="240"
+        app:cs_item_large_width="350"
+        app:cs_item_large_height="450"
         app:cs_item_margin="20"
         app:cs_item_scroll_factor="0.5"
+        app:cs_item_touch_diff="40"
         />
    <LinearLayout
        android:layout_width="match_parent"

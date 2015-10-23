@@ -7,5 +7,6 @@
         <attr name="cs_item_large_height" format="integer"/>
         <attr name="cs_item_margin" format="integer"/>
         <attr name="cs_item_scroll_factor" format="float"/>
+        <attr name="cs_item_touch_diff" format="integer"/>
     </declare-styleable>
 </resources>

@@ -25,6 +25,20 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         mCustomScrollView.setInterpolator(new OvershootInterpolator());
+        final int count = 3;
+        mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
+            @Override
+            public int getCount() {
+                return count;
+            }
+
+            @Override
+            public View getView(ViewGroup parent) {
+                View view = new ImageView(MainActivity.this);
+                view.setBackgroundResource(R.drawable.image);
+                return view;
+            }
+        });
     }
 
     @OnClick({R.id.add_item_button, R.id.add_3_item_button, R.id.add_8_item_button})

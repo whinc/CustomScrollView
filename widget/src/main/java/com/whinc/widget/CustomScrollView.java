@@ -55,6 +55,7 @@ public class CustomScrollView extends FrameLayout{
     /** Affect the scroll speed, the more large this value scroll more faster */
     private float mScrollFactor;
 
+    private OnItemChangedListener mItemChangedListener;
     private int mItemLargeIndex = -1;
     private Interpolator mInterpolator = null;
     private Context mContext;
@@ -62,7 +63,6 @@ public class CustomScrollView extends FrameLayout{
     private GestureDetector mGestureDetector;
     private ValueAnimator mAnimator;
     private Adapter mAdapter;
-
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
@@ -77,10 +77,15 @@ public class CustomScrollView extends FrameLayout{
         super(context, attrs, defStyleAttr);
         init(context, attrs);
     }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    public void setOnItemChangedListener(OnItemChangedListener itemChangedListener) {
+        mItemChangedListener = itemChangedListener;
     }
 
     public Adapter getAdapter() {
@@ -176,6 +181,10 @@ public class CustomScrollView extends FrameLayout{
                         // 修正大小
                         mTranslationX = getTranslateX(mItemLargeIndex);
                         adjustItemSize(mItemLargeIndex);
+
+                        if (mItemChangedListener != null) {
+                            mItemChangedListener.onChanged(mItemLargeIndex - 1, mItemLargeIndex);
+                        }
                     }
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item向右上方扩展，左边固定
@@ -238,6 +247,10 @@ public class CustomScrollView extends FrameLayout{
                         // 修正大小
                         mTranslationX = getTranslateX(mItemLargeIndex);
                         adjustItemSize(mItemLargeIndex);
+
+                        if (mItemChangedListener != null) {
+                            mItemChangedListener.onChanged(mItemLargeIndex + 1, mItemLargeIndex);
+                        }
                     }
                 }
             }
@@ -346,14 +359,18 @@ public class CustomScrollView extends FrameLayout{
                 newIndex = mItemLargeIndex + 1;
             }
         }
+        if (mItemChangedListener != null && mItemLargeIndex != newIndex) {
+            mItemChangedListener.onChanged(mItemLargeIndex, newIndex);
+        }
+
         mItemLargeIndex = newIndex;
 
-        log("item large index:" + mItemLargeIndex);
-        adjustItemSize(mItemLargeIndex);
+        log("item large index:" + newIndex);
+        adjustItemSize(newIndex);
 
-        final int destTranslationX = getTranslateX(mItemLargeIndex);
+        final int destTranslationX = getTranslateX(newIndex);
         final int srcTranslationX = mTranslationX;
-
+        // scroll end animation
         mAnimator = ValueAnimator.ofInt(srcTranslationX, destTranslationX);
         mAnimator.setDuration(DURATION);
         mAnimator.setInterpolator(mInterpolator);
@@ -362,7 +379,6 @@ public class CustomScrollView extends FrameLayout{
             public void onAnimationUpdate(ValueAnimator animation) {
                 float fraction = animation.getAnimatedFraction();
                 mTranslationX = (int) (srcTranslationX + (destTranslationX - srcTranslationX) * fraction);
-//                Log.i(TAG, "fraction:" + fraction);
                 requestLayout();
             }
         });
@@ -465,5 +481,9 @@ public class CustomScrollView extends FrameLayout{
     public interface Adapter {
         int getCount();
         View getView(ViewGroup parent);
+    }
+
+    public interface OnItemChangedListener {
+        void onChanged(int prev, int cur);
     }
 }

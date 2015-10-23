@@ -1,7 +1,9 @@
 package com.whinc.customscrollview;
 
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
+    public static final String TAG = MainActivity.class.getSimpleName();
     @Bind(R.id.custom_scrollView)
     CustomScrollView mCustomScrollView;
 
@@ -25,8 +28,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        mCustomScrollView.setInterpolator(new OvershootInterpolator());
         final int count = 3;
+        mCustomScrollView.setInterpolator(new OvershootInterpolator());
+        mCustomScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
+            @Override
+            public void onChanged(int prev, int cur) {
+                Log.i(TAG, String.format("prev:%d, cur:%d", prev, cur));
+            }
+        });
         mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
             @Override
             public int getCount() {

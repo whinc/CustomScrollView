@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public View getView(ViewGroup parent) {
                 View view = new ImageView(MainActivity.this);
-                view.setBackgroundResource(R.drawable.image);
+                view.setBackgroundResource(R.drawable.test_image);
                 return view;
             }
         });
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public View getView(ViewGroup parent) {
                 View view = new ImageView(MainActivity.this);
-                view.setBackgroundResource(R.drawable.image);
+                view.setBackgroundResource(R.drawable.test_image);
                 return view;
             }
         });

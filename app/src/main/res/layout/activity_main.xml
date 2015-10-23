@@ -14,7 +14,7 @@
         >
         <com.whinc.widget.CustomScrollView
             android:id="@+id/custom_scrollView"
-            android:layout_width="675px"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             app:cs_item_width="200px"
@@ -24,7 +24,6 @@
             app:cs_item_margin="20px"
             app:cs_item_scroll_factor="0.5"
             app:cs_item_touch_diff="40px"
-            android:background="@android:color/holo_purple"
             />
 
         <LinearLayout
@@ -41,7 +40,6 @@
                 android:text="Add Item"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
-                android:background="@drawable/btn_selector"
                 />
 
             <Button
@@ -51,7 +49,6 @@
                 android:text="Clear Items"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
-                android:background="@drawable/btn_selector"
                 />
 
             <Button
@@ -61,7 +58,6 @@
                 android:text="Add 3 Item"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
-                android:background="@drawable/btn_selector"
                 />
 
             <Button
@@ -71,7 +67,6 @@
                 android:text="Add 8 Item"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
-                android:background="@drawable/btn_selector"
                 />
         </LinearLayout>
     </LinearLayout>

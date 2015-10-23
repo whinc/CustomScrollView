@@ -49,7 +49,8 @@ public class CustomScrollView extends FrameLayout{
     private int mItemLargeWidth;
     /** Height of large item in ScrollView */
     private int mItemLargeHeight;
-    /** When scroll distance(from touch down to touch up) large than mTouchDiff, scroll to next item  */
+    /** When touch up if the distance the center large item offset center line large then this value,
+     * ScrollView will scroll to next item automatically */
     private int mTouchDiff;
     /** Affect the scroll speed, the more large this value scroll more faster */
     private float mScrollFactor;
@@ -105,6 +106,10 @@ public class CustomScrollView extends FrameLayout{
                 view.setTag(new Rect(0, 0, 0, 0));
                 addView(view);
             }
+        }
+
+        if (isShown()) {
+            update();
         }
     }
 
@@ -223,7 +228,8 @@ public class CustomScrollView extends FrameLayout{
     }
 
     /** Set the end animator TimeInterpolator, if set null it will use the default
-     * {@link android.view.animation.LinearInterpolator} */
+     * {@link android.view.animation.LinearInterpolator}
+     * @param interpolator reference to subclass of {@link Interpolator}*/
     public void setInterpolator(@Nullable Interpolator interpolator) {
         mInterpolator = interpolator;
     }
@@ -232,14 +238,7 @@ public class CustomScrollView extends FrameLayout{
     private void onMeasured() {
         mWidth = getMeasuredWidth();
         mHeight = getMeasuredHeight();
-
-        if (getChildCount() > 0) {
-            mItemLargeIndex = getChildCount() / 2;
-            mTranslationX = getTranslateX(mItemLargeIndex);
-            // adjust item size on get scrollview measured size
-            adjustItemSize(mItemLargeIndex);
-            requestLayout();
-        }
+        update();
     }
 
     private void init(Context context, AttributeSet attrs) {
@@ -374,6 +373,16 @@ public class CustomScrollView extends FrameLayout{
             mItemLargeIndex = -1;
             removeAllViewsInLayout();
             invalidate();
+        }
+    }
+
+    private void update() {
+        if (getChildCount() > 0) {
+            mItemLargeIndex = getChildCount() / 2;
+            mTranslationX = getTranslateX(mItemLargeIndex);
+            // adjust item size on get scrollview measured size
+            adjustItemSize(mItemLargeIndex);
+            requestLayout();
         }
     }
 

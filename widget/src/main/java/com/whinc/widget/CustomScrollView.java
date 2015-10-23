@@ -117,9 +117,19 @@ public class CustomScrollView extends FrameLayout{
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+        // Measure children
+        for (int i = 0; i < getChildCount(); ++i) {
+            View child = getChildAt(i);
+            Rect rect = (Rect) child.getTag();
+            int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
+            int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
+            measureChild(child, widthSpec, heightSpec);
+        }
+
         if (mWidth <= 0) {      // store measured size
             mWidth = getMeasuredWidth();
             mHeight = getMeasuredHeight();
+
             if (!isInEditMode()) {
                 update();
             }

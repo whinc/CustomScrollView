@@ -1,7 +1,6 @@
 package com.whinc.customscrollview;
 
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +20,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
     @Bind(R.id.custom_scrollView)
     CustomScrollView mCustomScrollView;
+    private boolean mAutoScroll = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,8 +32,28 @@ public class MainActivity extends AppCompatActivity {
         mCustomScrollView.setInterpolator(new OvershootInterpolator());
         mCustomScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
             @Override
-            public void onChanged(int prev, int cur) {
+            public void onChanged(final CustomScrollView view, int prev, int cur) {
                 Log.i(TAG, String.format("prev:%d, cur:%d", prev, cur));
+                if (mAutoScroll) {
+                    Log.i(TAG, "auto scroll");
+                    if (cur == 0) {
+                        // ScrollView is scrolling, so you need delaying call scrollTo()
+                        view.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                view.scrollTo(view.getChildCount() - 1);
+                            }
+                        });
+                    }
+                    if (cur == view.getChildCount() - 1) {
+                        view.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                view.scrollTo(0);
+                            }
+                        });
+                    }
+                }
             }
         });
         mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
@@ -62,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
                 n = 8;
                 break;
         }
-//        mCustomScrollView.addItems(n);
         final int finalN = n;
         mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
             @Override
@@ -112,5 +131,20 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.stop_scroll_button)
     protected void stopScroll() {
         mCustomScrollView.stopScroll();
+    }
+
+    @OnClick(R.id.auto_scroll_button)
+    protected void autoScroll() {
+        mAutoScroll = true;
+        if (mCustomScrollView.getItemLargeIndex() == 0) {
+            mCustomScrollView.scrollTo(mCustomScrollView.getChildCount() - 1);
+        } else {
+            mCustomScrollView.scrollTo(0);
+        }
+    }
+
+    @OnClick(R.id.stop_auto_scroll_button)
+    protected void stopAutoScroll() {
+        mAutoScroll = false;
     }
 }

@@ -30,7 +30,6 @@ import android.widget.TextView;
 public class CustomScrollView extends FrameLayout{
     private static final String TAG = CustomScrollView.class.getSimpleName();
     private static final boolean DEBUG = true;
-    private static final int MSG_SCROLL_EVENT = 0;
 
     private static final int DURATION = 500;        // ms
     private static final int DEFAULT_ITEM_WIDTH = 200;
@@ -44,17 +43,17 @@ public class CustomScrollView extends FrameLayout{
     public static final int SCROLL_SPEED_LOW = 0;
     public static final int SCROLL_SPEED_NORMAL = 1;
     public static final int SCROLL_SPEED_FAST = 2;
+    @IntDef({SCROLL_SPEED_LOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
+    private @interface ScrollSpeed {}
+
     /** scroll action */
     private Runnable mScrollRunnable;
     /** Destination index that want scroll to */
     private int mDestItemLargeIndex = -1;
-
-    @IntDef({SCROLL_SPEED_LOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
-    private @interface ScrollSpeed {};
+    /** Width of ScrollView */
+    private int mWidth;;
 
     /* XML layout attributes */
-    /** Width of ScrollView */
-    private int mWidth;
     /** Height of ScrollView */
     private int mHeight;
     /** Width of item in ScrollView */
@@ -67,14 +66,12 @@ public class CustomScrollView extends FrameLayout{
     private int mItemLargeWidth;
     /** Height of large item in ScrollView */
     private int mItemLargeHeight;
-    /** When touch up if the distance the center large item offset center line large then this value,
-     * ScrollView will scroll to next item automatically */
-    private int mTouchDiff;
+    /** The least distance scroll to next item */
+    private int mScrollItemLeastDistance;
     /** Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] ) */
     private float mScrollFactor;
     /** Scroll speed, reference to {@link com.whinc.widget.CustomScrollView.ScrollSpeed} */
     private int mScrollSpeed;
-
     private OnItemChangedListener mItemChangedListener;
     private int mItemLargeIndex = -1;
     private Interpolator mInterpolator = null;
@@ -84,12 +81,10 @@ public class CustomScrollView extends FrameLayout{
     private ValueAnimator mAnimator;
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
-
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
     }
-
     public CustomScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
@@ -104,6 +99,11 @@ public class CustomScrollView extends FrameLayout{
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    /** Get current large item index. */
+    public int getItemLargeIndex() {
+        return mItemLargeIndex;
     }
 
     public void setOnItemChangedListener(OnItemChangedListener itemChangedListener) {
@@ -157,7 +157,8 @@ public class CustomScrollView extends FrameLayout{
             return;
         }
 
-        // post scroll event until scroll to destination
+        int delay = scrollDelay;
+        // first time into recursion
         if (mScrollRunnable == null) {
             mScrollRunnable = new Runnable() {
                 @Override
@@ -166,7 +167,12 @@ public class CustomScrollView extends FrameLayout{
                     scrollBy(itemCount, destItemLargeIndex, scrollDistanceX, scrollDelay);
                 }
             };
+
+            // first time don't need delay
+            delay = 0;
         }
+
+        // post scroll event until scroll to destination
         getHandler().postDelayed(mScrollRunnable, scrollDelay);
     }
 
@@ -218,6 +224,7 @@ public class CustomScrollView extends FrameLayout{
         getHandler().removeCallbacks(mScrollRunnable);
         mScrollRunnable = null;
         mIsScrolling = false;
+        log("stop scroll");
     }
 
     @Override
@@ -287,7 +294,7 @@ public class CustomScrollView extends FrameLayout{
                         adjustItemSize(mItemLargeIndex);
 
                         if (mItemChangedListener != null) {
-                            mItemChangedListener.onChanged(mItemLargeIndex - 1, mItemLargeIndex);
+                            mItemChangedListener.onChanged(this, mItemLargeIndex - 1, mItemLargeIndex);
                         }
                     }
                 } else if (distanceX < 0) {     // scroll right
@@ -353,7 +360,7 @@ public class CustomScrollView extends FrameLayout{
                         adjustItemSize(mItemLargeIndex);
 
                         if (mItemChangedListener != null) {
-                            mItemChangedListener.onChanged(mItemLargeIndex + 1, mItemLargeIndex);
+                            mItemChangedListener.onChanged(this, mItemLargeIndex + 1, mItemLargeIndex);
                         }
                     }
                 }
@@ -397,7 +404,7 @@ public class CustomScrollView extends FrameLayout{
             mItemLargeWidth = DEFAULT_ITEM_LARGE_WIDTH;
             mItemLargeHeight = DEFAULT_ITEM_LARGE_HEIGHT;
             mScrollFactor = DEFAULT_SCROLL_FACTOR;
-            mTouchDiff = DEFAULT_TOUCH_DIFF;
+            mScrollItemLeastDistance = DEFAULT_TOUCH_DIFF;
             mScrollSpeed = SCROLL_SPEED_NORMAL;
         } else {
             TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomScrollView);
@@ -406,12 +413,12 @@ public class CustomScrollView extends FrameLayout{
             mItemMargin = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_margin, DEFAULT_ITEM_MARGIN);
             mItemLargeWidth = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_large_width, DEFAULT_ITEM_LARGE_WIDTH);
             mItemLargeHeight = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_large_height, DEFAULT_ITEM_LARGE_HEIGHT);
-            mScrollFactor = typedArray.getFloat(R.styleable.CustomScrollView_cs_item_scroll_factor, DEFAULT_SCROLL_FACTOR);
-            mTouchDiff = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_touch_diff, DEFAULT_TOUCH_DIFF);
-            mTouchDiff = Math.min(mTouchDiff, mItemLargeWidth - mItemWidth);
+            mScrollFactor = typedArray.getFloat(R.styleable.CustomScrollView_cs_scroll_factor, DEFAULT_SCROLL_FACTOR);
+            mScrollItemLeastDistance = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_scroll_item_least_distance, DEFAULT_TOUCH_DIFF);
+            mScrollItemLeastDistance = Math.min(mScrollItemLeastDistance, mItemLargeWidth - mItemWidth);
             mScrollSpeed = typedArray.getInteger(R.styleable.CustomScrollView_cs_scroll_speed, SCROLL_SPEED_NORMAL);
             log("item width:" + mItemWidth + " px");
-            log("touch diff:" + mTouchDiff + " px");
+            log("touch diff:" + mScrollItemLeastDistance + " px");
             typedArray.recycle();
         }
 
@@ -453,20 +460,20 @@ public class CustomScrollView extends FrameLayout{
         Rect centerRect = (Rect)getChildAt(mItemLargeIndex).getTag();
         if (mItemLargeIndex > 0) {
             Rect leftRect = (Rect)getChildAt(mItemLargeIndex - 1).getTag();
-            if (centerRect.width() < (mItemLargeWidth - mTouchDiff)
+            if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && leftRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex - 1;
             }
         }
         if (mItemLargeIndex < getChildCount() - 1) {
             Rect rightRect = (Rect)getChildAt(mItemLargeIndex + 1).getTag();
-            if (centerRect.width() < (mItemLargeWidth - mTouchDiff)
+            if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && rightRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex + 1;
             }
         }
         if (mItemChangedListener != null && mItemLargeIndex != newIndex) {
-            mItemChangedListener.onChanged(mItemLargeIndex, newIndex);
+            mItemChangedListener.onChanged(this, mItemLargeIndex, newIndex);
         }
 
         mItemLargeIndex = newIndex;
@@ -522,7 +529,7 @@ public class CustomScrollView extends FrameLayout{
         requestLayout();
 
         if (mItemChangedListener != null) {
-            mItemChangedListener.onChanged(mItemLargeIndex, mItemLargeIndex);
+            mItemChangedListener.onChanged(this, mItemLargeIndex, mItemLargeIndex);
         }
     }
 
@@ -606,6 +613,6 @@ public class CustomScrollView extends FrameLayout{
     }
 
     public interface OnItemChangedListener {
-        void onChanged(int prev, int cur);
+        void onChanged(CustomScrollView view, int prev, int cur);
     }
 }

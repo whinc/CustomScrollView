@@ -22,8 +22,8 @@
             app:cs_item_large_width="350px"
             app:cs_item_large_height="450px"
             app:cs_item_margin="20px"
-            app:cs_item_scroll_factor="0.5"
-            app:cs_item_touch_diff="40px"
+            app:cs_scroll_factor="0.5"
+            app:cs_scroll_item_least_distance="40px"
             app:cs_scroll_speed="fast"
             />
 
@@ -95,6 +95,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="stop scroll"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+            <Button
+                android:id="@+id/auto_scroll_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="auto scroll"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+            <Button
+                android:id="@+id/stop_auto_scroll_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="stop auto scroll"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
                 />

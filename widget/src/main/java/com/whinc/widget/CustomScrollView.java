@@ -24,7 +24,6 @@ import android.widget.TextView;
 /**
  * Created by Administrator on 2015/10/21.
  * New function:
- * 1) add scrollBy(), scrollTo(), isScrolling(), stopScroll()
  * 2) update customise attributes names
  * 3) update readme about "how to use"
  */
@@ -45,7 +44,9 @@ public class CustomScrollView extends FrameLayout{
     public static final int SCROLL_SPEED_LOW = 0;
     public static final int SCROLL_SPEED_NORMAL = 1;
     public static final int SCROLL_SPEED_FAST = 2;
+    /** scroll action */
     private Runnable mScrollRunnable;
+    /** Destination index that want scroll to */
     private int mDestItemLargeIndex = -1;
 
     @IntDef({SCROLL_SPEED_LOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
@@ -141,6 +142,7 @@ public class CustomScrollView extends FrameLayout{
         }
     }
 
+    /** Scroll to specified position */
     public void scrollTo(int index) {
         scrollBy(index - mItemLargeIndex);
     }
@@ -180,13 +182,9 @@ public class CustomScrollView extends FrameLayout{
             return;
         }
         mIsScrolling = true;
-        log("Start scrolling");
 
         // limit index range
-        if (mDestItemLargeIndex < 0) {
-            mDestItemLargeIndex = mItemLargeIndex;
-        }
-        mDestItemLargeIndex = Math.min(Math.max(mDestItemLargeIndex + itemCount, 0), getChildCount() - 1);
+        mDestItemLargeIndex = Math.min(Math.max(mItemLargeIndex + itemCount, 0), getChildCount() - 1);
         int scrollDelay = Integer.MAX_VALUE;
         int scrollDistanceX = 10 * (itemCount > 0 ? 1 : -1);
 
@@ -204,7 +202,8 @@ public class CustomScrollView extends FrameLayout{
             default:
                 break;
         }
-        log(String.format("dest index:%d, speed:%d, delay:%d", mDestItemLargeIndex, scrollDistanceX, scrollDelay));
+        log(String.format("Start scrolling, cur index:%d, dest index:%d, speed:%d, delay:%d",
+                mItemLargeIndex, mDestItemLargeIndex, scrollDistanceX, scrollDelay));
 
         scrollBy(itemCount, mDestItemLargeIndex, scrollDistanceX, scrollDelay);
     }
@@ -218,13 +217,22 @@ public class CustomScrollView extends FrameLayout{
     public void stopScroll() {
         getHandler().removeCallbacks(mScrollRunnable);
         mScrollRunnable = null;
-        mItemLargeIndex = mDestItemLargeIndex;
         mIsScrolling = false;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        if (isInEditMode()) {
+            return;
+        }
+
+        if (mWidth <= 0) {      // store measured size
+            mWidth = getMeasuredWidth();
+            mHeight = getMeasuredHeight();
+            reset();
+        }
 
         // Measure children
         for (int i = 0; i < getChildCount(); ++i) {
@@ -235,14 +243,6 @@ public class CustomScrollView extends FrameLayout{
             measureChild(child, widthSpec, heightSpec);
         }
 
-        if (mWidth <= 0) {      // store measured size
-            mWidth = getMeasuredWidth();
-            mHeight = getMeasuredHeight();
-
-            if (!isInEditMode()) {
-                reset();
-            }
-        }
     }
 
     /** Called when scroll current view */
@@ -269,14 +269,14 @@ public class CustomScrollView extends FrameLayout{
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right -= Math.round(deltaX);
                     rect1.top += Math.round(deltaY);
-                    print("center", rect1);
+//                    print("center", rect1);
 
                     // 右侧item向左上方扩展，右边固定
                     View view2 = getChildAt(mItemLargeIndex + 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.left -= Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
-                    print("right", rect2);
+//                    print("right", rect2);
 
                     // 向左滑动一个Item后更新当前Large item指向
                     if (rect2.width() >= mItemLargeWidth ||
@@ -298,14 +298,14 @@ public class CustomScrollView extends FrameLayout{
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right += Math.round(deltaX);
                     rect1.top -= Math.round(deltaY);
-                    print("center", rect1);
+//                    print("center", rect1);
 
                     // 右侧item向右下方扩展， 右边固定
                     View view2 = getChildAt(mItemLargeIndex + 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.left += Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
-                    print("right", rect2);
+//                    print("right", rect2);
                 }
             }
         } else if (itemCenterX > centerLine) {      // locate in right side of CustomScrollView
@@ -319,14 +319,14 @@ public class CustomScrollView extends FrameLayout{
                     rect1.left -= Math.round(deltaX);
                     rect1.top -= Math.round(deltaY);
 //                        Log.i(TAG, String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
-                    print("center", rect1);
+//                    print("center", rect1);
 
                     // 左侧item向左下方扩展，左边固定
                     View view2 = getChildAt(mItemLargeIndex - 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.right -= Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
-                    print("left", rect2);
+//                    print("left", rect2);
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item向右下方扩展，右边固定
                     View view1 = getChildAt(mItemLargeIndex);
@@ -335,15 +335,15 @@ public class CustomScrollView extends FrameLayout{
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left += Math.round(deltaX);
                     rect1.top += Math.round(deltaY);
-                    log(String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
-                    print("center", rect1);
+//                    log(String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
+//                    print("center", rect1);
 
                     // 左侧item向右上方扩展，左边固定
                     View view2 = getChildAt(mItemLargeIndex - 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.right += Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
-                    print("left", rect2);
+//                    print("left", rect2);
 
                     if (rect2.width() >= mItemLargeWidth ||
                             rect2.height() >= mItemLargeHeight) {

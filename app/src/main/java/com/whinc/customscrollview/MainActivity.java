@@ -85,18 +85,16 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.scroll_left_button)
     protected void scrollLeft() {
-        if (mCustomScrollView.isScrolling()) {
-            mCustomScrollView.stopScroll();
+        if (!mCustomScrollView.isScrolling()) {
+            mCustomScrollView.scrollBy(-1);
         }
-        mCustomScrollView.scrollBy(-1);
     }
 
     @OnClick(R.id.scroll_right_button)
     protected void scrollRight() {
-        if (mCustomScrollView.isScrolling()) {
-            mCustomScrollView.stopScroll();
+        if (!mCustomScrollView.isScrolling()) {
+            mCustomScrollView.scrollBy(1);
         }
-        mCustomScrollView.scrollBy(1);
     }
 
     @OnClick(R.id.clear_item_button)
@@ -106,7 +104,9 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.scroll_to_button)
     protected void scrollTo() {
-        mCustomScrollView.scrollTo(0);
+        if (!mCustomScrollView.isScrolling()) {
+            mCustomScrollView.scrollTo(0);
+        }
     }
 
     @OnClick(R.id.stop_scroll_button)

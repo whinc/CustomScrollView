@@ -1,7 +1,7 @@
 
 ### CustomScrollView
 
-![screenshot](screenshot.git)
+![screenshot](./screenshot.gif)
 
 ### Integration （集成）
 
@@ -87,7 +87,7 @@ mCustomScrollView.scrollBy(1);
 * app:cs_item_margin [dimension default:10px]
 * app:cs_scroll_factor [float default:0.5f] --> Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] )
 * app:cs_scroll_item_least_distance [dimension default:40px] --> The least distance scroll to next item
-* app:cs_scroll_speed [enum("fast", "normal", "slow") default:normal]
+* app:cs_scroll_speed [enum("fast", "normal", "slow") default:normal] 
 
 ### The MIT License (MIT)
 

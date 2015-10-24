@@ -23,9 +23,9 @@ import android.widget.TextView;
 
 /**
  * Created by Administrator on 2015/10/21.
- * New function:
- * 2) update customise attributes names
- * 3) update readme about "how to use"
+ * Rest work:
+ * * Expose getter and setter methods
+ * * Improve performance with view recycler
  */
 public class CustomScrollView extends FrameLayout{
     private static final String TAG = CustomScrollView.class.getSimpleName();
@@ -40,10 +40,10 @@ public class CustomScrollView extends FrameLayout{
     private static final float DEFAULT_SCROLL_FACTOR = 0.5f;
     private static final int DEFAULT_TOUCH_DIFF = 20;
 
-    public static final int SCROLL_SPEED_LOW = 0;
+    public static final int SCROLL_SPEED_SLOW = 0;
     public static final int SCROLL_SPEED_NORMAL = 1;
     public static final int SCROLL_SPEED_FAST = 2;
-    @IntDef({SCROLL_SPEED_LOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
+    @IntDef({SCROLL_SPEED_SLOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
     private @interface ScrollSpeed {}
 
     /** scroll action */
@@ -195,7 +195,7 @@ public class CustomScrollView extends FrameLayout{
         int scrollDistanceX = 10 * (itemCount > 0 ? 1 : -1);
 
         switch (mScrollSpeed) {
-            case SCROLL_SPEED_LOW:
+            case SCROLL_SPEED_SLOW:
                 scrollDelay = 60;
                 break;
             case SCROLL_SPEED_NORMAL:

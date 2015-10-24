@@ -1,7 +1,7 @@
 
 ### CustomScrollView
 
-![screenshot](screenshot.png)
+![screenshot](screenshot.git)
 
 ### Integration （集成）
 
@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     ...
-    compile 'com.whinc.widget:customscrollview:1.0.4'
+    compile 'com.whinc.widget:customscrollview:1.0.8'
 }
 ```
 
@@ -34,7 +34,7 @@ Use in xml layout file:
     >
     <com.whinc.widget.CustomScrollView
         android:id="@+id/custom_scrollView"
-        android:layout_width="675px"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         app:cs_item_width="200px"
@@ -42,8 +42,9 @@ Use in xml layout file:
         app:cs_item_large_width="350px"
         app:cs_item_large_height="450px"
         app:cs_item_margin="20px"
-        app:cs_item_scroll_factor="0.5"
-        app:cs_item_touch_diff="40px"
+        app:cs_scroll_factor="0.5"
+        app:cs_scroll_item_least_distance="40px"
+        app:cs_scroll_speed="fast"
         />
 ```
 
@@ -54,7 +55,7 @@ mCustomScrollView.setInterpolator(new OvershootInterpolator());
 // Listener item change event
 mCustomScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
     @Override
-    public void onChanged(int prev, int cur) {
+    public void onChanged(final CustomScrollView view, int prev, int cur) {
         Log.i(TAG, String.format("prev:%d, cur:%d", prev, cur));
     }
 });
@@ -72,6 +73,9 @@ mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
         return view;
     }
 });
+
+// scroll left
+mCustomScrollView.scrollBy(1);
 ```
 
 ### Introduce to custom attributes （自定义属性说明）
@@ -81,9 +85,9 @@ mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
 * app:cs_item_large_width [dimension default:two times of cs_item_width]
 * app:cs_item_large_height [dimension default:two times of cs_item_height]
 * app:cs_item_margin [dimension default:10px]
-* app:cs_item_scroll_factor [float default:0.5f] --> Affect the scroll speed, the more large this value scroll more faster
-* app:cs_item_touch_diff [dimension default:40px] --> When touch up if the distance the center large item offset center line large then this value,
-     ScrollView will scroll to next item automatically
+* app:cs_scroll_factor [float default:0.5f] --> Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] )
+* app:cs_scroll_item_least_distance [dimension default:40px] --> The least distance scroll to next item
+* app:cs_scroll_speed [enum("fast", "normal", "slow") default:normal]
 
 ### The MIT License (MIT)
 

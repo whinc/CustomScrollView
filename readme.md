@@ -83,7 +83,7 @@ mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
 * app:cs_item_margin [dimension default:10px]
 * app:cs_item_scroll_factor [float default:0.5f] --> Affect the scroll speed, the more large this value scroll more faster
 * app:cs_item_touch_diff [dimension default:40px] --> When touch up if the distance the center large item offset center line large then this value,
-     * ScrollView will scroll to next item automatically
+     ScrollView will scroll to next item automatically
 
 ### The MIT License (MIT)
 

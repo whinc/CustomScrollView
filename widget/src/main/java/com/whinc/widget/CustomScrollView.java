@@ -7,6 +7,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Build;
+import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,11 +20,19 @@ import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+
 /**
  * Created by Administrator on 2015/10/21.
+ * New function:
+ * 1) add scrollBy(), scrollTo(), isScrolling(), stopScroll()
+ * 2) update customise attributes names
+ * 3) update readme about "how to use"
  */
 public class CustomScrollView extends FrameLayout{
     private static final String TAG = CustomScrollView.class.getSimpleName();
+    private static final boolean DEBUG = true;
+    private static final int MSG_SCROLL_EVENT = 0;
+
     private static final int DURATION = 500;        // ms
     private static final int DEFAULT_ITEM_WIDTH = 200;
     private static final int DEFAULT_ITEM_HEIGHT = DEFAULT_ITEM_WIDTH * 4 / 3;
@@ -32,7 +41,15 @@ public class CustomScrollView extends FrameLayout{
     private static final int DEFAULT_ITEM_LARGE_HEIGHT = DEFAULT_ITEM_HEIGHT * 2;
     private static final float DEFAULT_SCROLL_FACTOR = 0.5f;
     private static final int DEFAULT_TOUCH_DIFF = 20;
-    private static final boolean DEBUG = true;
+
+    public static final int SCROLL_SPEED_LOW = 0;
+    public static final int SCROLL_SPEED_NORMAL = 1;
+    public static final int SCROLL_SPEED_FAST = 2;
+    private Runnable mScrollRunnable;
+    private int mDestItemLargeIndex = -1;
+
+    @IntDef({SCROLL_SPEED_LOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
+    private @interface ScrollSpeed {};
 
     /* XML layout attributes */
     /** Width of ScrollView */
@@ -52,8 +69,10 @@ public class CustomScrollView extends FrameLayout{
     /** When touch up if the distance the center large item offset center line large then this value,
      * ScrollView will scroll to next item automatically */
     private int mTouchDiff;
-    /** Affect the scroll speed, the more large this value scroll more faster */
+    /** Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] ) */
     private float mScrollFactor;
+    /** Scroll speed, reference to {@link com.whinc.widget.CustomScrollView.ScrollSpeed} */
+    private int mScrollSpeed;
 
     private OnItemChangedListener mItemChangedListener;
     private int mItemLargeIndex = -1;
@@ -63,6 +82,8 @@ public class CustomScrollView extends FrameLayout{
     private GestureDetector mGestureDetector;
     private ValueAnimator mAnimator;
     private Adapter mAdapter;
+    private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
+
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
@@ -118,6 +139,87 @@ public class CustomScrollView extends FrameLayout{
         if (isShown()) {
             reset();
         }
+    }
+
+    public void scrollTo(int index) {
+        scrollBy(index - mItemLargeIndex);
+    }
+
+    private void scrollBy(final int itemCount, final int destItemLargeIndex, final int scrollDistanceX, final int scrollDelay) {
+        if (destItemLargeIndex == mItemLargeIndex) {
+            stopScroll();
+            return;
+        }
+
+        if (!isScrolling()) {
+            return;
+        }
+
+        // post scroll event until scroll to destination
+        if (mScrollRunnable == null) {
+            mScrollRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    onScroll(null, null, scrollDistanceX, 0);
+                    scrollBy(itemCount, destItemLargeIndex, scrollDistanceX, scrollDelay);
+                }
+            };
+        }
+        getHandler().postDelayed(mScrollRunnable, scrollDelay);
+    }
+
+    /**
+     * <p>Scroll left or right by specified items. If ScrollView is scrolling this call will be
+     * ignored.</p>
+     * @param itemCount item count need to scroll by. If it large than "scroll item count" -1 or small
+     *                       than 0, it will be limited to [0, "scroll item count" - 1].
+     */
+    public void scrollBy(int itemCount) {
+        if (isScrolling()) {
+            log("Is scrolling");
+            return;
+        }
+        mIsScrolling = true;
+        log("Start scrolling");
+
+        // limit index range
+        if (mDestItemLargeIndex < 0) {
+            mDestItemLargeIndex = mItemLargeIndex;
+        }
+        mDestItemLargeIndex = Math.min(Math.max(mDestItemLargeIndex + itemCount, 0), getChildCount() - 1);
+        int scrollDelay = Integer.MAX_VALUE;
+        int scrollDistanceX = 10 * (itemCount > 0 ? 1 : -1);
+
+        switch (mScrollSpeed) {
+            case SCROLL_SPEED_LOW:
+                scrollDelay = 60;
+                break;
+            case SCROLL_SPEED_NORMAL:
+                scrollDelay = 25;
+                break;
+            case SCROLL_SPEED_FAST:
+                scrollDistanceX = (int) (scrollDistanceX * 2.0f);
+                scrollDelay = 10;
+                break;
+            default:
+                break;
+        }
+        log(String.format("dest index:%d, speed:%d, delay:%d", mDestItemLargeIndex, scrollDistanceX, scrollDelay));
+
+        scrollBy(itemCount, mDestItemLargeIndex, scrollDistanceX, scrollDelay);
+    }
+
+    /** Return true is ScrollView is scrolling, otherwise return false. */
+    public boolean isScrolling() {
+        return mIsScrolling;
+    }
+
+    /** Stop scrolling */
+    public void stopScroll() {
+        getHandler().removeCallbacks(mScrollRunnable);
+        mScrollRunnable = null;
+        mItemLargeIndex = mDestItemLargeIndex;
+        mIsScrolling = false;
     }
 
     @Override
@@ -296,6 +398,7 @@ public class CustomScrollView extends FrameLayout{
             mItemLargeHeight = DEFAULT_ITEM_LARGE_HEIGHT;
             mScrollFactor = DEFAULT_SCROLL_FACTOR;
             mTouchDiff = DEFAULT_TOUCH_DIFF;
+            mScrollSpeed = SCROLL_SPEED_NORMAL;
         } else {
             TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomScrollView);
             mItemWidth = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_width, DEFAULT_ITEM_WIDTH);
@@ -306,6 +409,7 @@ public class CustomScrollView extends FrameLayout{
             mScrollFactor = typedArray.getFloat(R.styleable.CustomScrollView_cs_item_scroll_factor, DEFAULT_SCROLL_FACTOR);
             mTouchDiff = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_item_touch_diff, DEFAULT_TOUCH_DIFF);
             mTouchDiff = Math.min(mTouchDiff, mItemLargeWidth - mItemWidth);
+            mScrollSpeed = typedArray.getInteger(R.styleable.CustomScrollView_cs_scroll_speed, SCROLL_SPEED_NORMAL);
             log("item width:" + mItemWidth + " px");
             log("touch diff:" + mTouchDiff + " px");
             typedArray.recycle();
@@ -402,19 +506,30 @@ public class CustomScrollView extends FrameLayout{
         }
     }
 
-    /** Reset item position and size */
-    private void reset() {
-        if (getChildCount() > 0) {
-            mItemLargeIndex = getChildCount() / 2;
-            mTranslationX = getTranslateX(mItemLargeIndex);
-            // adjust item size on get scrollview measured size
-            adjustItemSize(mItemLargeIndex);
-            requestLayout();
+    /** <p>Reset item position,size and translationX. the result is the large item locates in
+     * the center of ScrollView, items whose index small than large item locate in left
+     * of large item, items whose index large than large item locate in right of large item </p>
+     *
+     * @param itemLargeIndex index of large item. if it large than "scroll item count" -1 or small
+     *                       than 0, it will be limited to [0, "scroll item count" - 1].
+     * */
+    private void reset(int itemLargeIndex) {
+        mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getChildCount() - 1);
 
-            if (mItemChangedListener != null) {
-                mItemChangedListener.onChanged(mItemLargeIndex, mItemLargeIndex);
-            }
+        mTranslationX = getTranslateX(mItemLargeIndex);
+        // adjust item size on get scrollview measured size
+        adjustItemSize(mItemLargeIndex);
+        requestLayout();
+
+        if (mItemChangedListener != null) {
+            mItemChangedListener.onChanged(mItemLargeIndex, mItemLargeIndex);
         }
+    }
+
+    /** Reset item position,size and translationX, the result is the large item locates in
+     * the center of ScrollView and other item locate in two side of the large item equally */
+    private void reset() {
+        reset(getChildCount() / 2);
     }
 
     /** When the nth item is Large Item and center in screen,
@@ -462,7 +577,7 @@ public class CustomScrollView extends FrameLayout{
                 rect.left, rect.right, rect.width(), rect.height()));
     }
 
-    /** Adjust all items size because scroll will lead precision loss. */
+    /** Adjust all item size to standard size */
     private void adjustItemSize(int largeItemIndex) {
         int n = getChildCount();
         for (int i = 0; i < n; ++i) {

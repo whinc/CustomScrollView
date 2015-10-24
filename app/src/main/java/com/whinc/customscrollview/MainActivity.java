@@ -51,13 +51,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @OnClick({R.id.add_item_button, R.id.add_3_item_button, R.id.add_8_item_button})
+    @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})
     protected void addItem(Button btn) {
         int n = 0;
         switch (btn.getId()) {
-            case R.id.add_item_button:
-                n = 1;
-                break;
             case R.id.add_3_item_button:
                 n = 3;
                 break;
@@ -86,8 +83,34 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @OnClick(R.id.scroll_left_button)
+    protected void scrollLeft() {
+        if (mCustomScrollView.isScrolling()) {
+            mCustomScrollView.stopScroll();
+        }
+        mCustomScrollView.scrollBy(-1);
+    }
+
+    @OnClick(R.id.scroll_right_button)
+    protected void scrollRight() {
+        if (mCustomScrollView.isScrolling()) {
+            mCustomScrollView.stopScroll();
+        }
+        mCustomScrollView.scrollBy(1);
+    }
+
     @OnClick(R.id.clear_item_button)
     protected void clearItems() {
         mCustomScrollView.clearItems();
+    }
+
+    @OnClick(R.id.scroll_to_button)
+    protected void scrollTo() {
+        mCustomScrollView.scrollTo(0);
+    }
+
+    @OnClick(R.id.stop_scroll_button)
+    protected void stopScroll() {
+        mCustomScrollView.stopScroll();
     }
 }

@@ -24,23 +24,15 @@
             app:cs_item_margin="20px"
             app:cs_item_scroll_factor="0.5"
             app:cs_item_touch_diff="40px"
+            app:cs_scroll_speed="fast"
             />
 
         <LinearLayout
+            android:id="@+id/bottom_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_alignParentBottom="true"
             >
-
-            <Button
-                android:id="@+id/add_item_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Add Item"
-                android:textAllCaps="false"
-                android:layout_margin="5px"
-                />
 
             <Button
                 android:id="@+id/clear_item_button"
@@ -55,7 +47,7 @@
                 android:id="@+id/add_3_item_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Add 3 Item"
+                android:text="3 Item"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
                 />
@@ -64,7 +56,45 @@
                 android:id="@+id/add_8_item_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Add 8 Item"
+                android:text="8 Item"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+
+            <Button
+                android:id="@+id/scroll_left_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="scroll left"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+            <Button
+                android:id="@+id/scroll_right_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="scroll right"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            >
+            <Button
+                android:id="@+id/scroll_to_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="scroll to first"
+                android:textAllCaps="false"
+                android:layout_margin="5px"
+                />
+            <Button
+                android:id="@+id/stop_scroll_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="stop scroll"
                 android:textAllCaps="false"
                 android:layout_margin="5px"
                 />

@@ -113,8 +113,10 @@ public class CustomScrollView extends FrameLayout{
             }
         }
 
+        // If setAdapter() is called before scroll view can show call reset() on time in onMeasure() of
+        // scroll view, otherwise call reset() immediately.
         if (isShown()) {
-            update();
+            reset();
         }
     }
 
@@ -136,7 +138,7 @@ public class CustomScrollView extends FrameLayout{
             mHeight = getMeasuredHeight();
 
             if (!isInEditMode()) {
-                update();
+                reset();
             }
         }
     }
@@ -400,13 +402,18 @@ public class CustomScrollView extends FrameLayout{
         }
     }
 
-    private void update() {
+    /** Reset item position and size */
+    private void reset() {
         if (getChildCount() > 0) {
             mItemLargeIndex = getChildCount() / 2;
             mTranslationX = getTranslateX(mItemLargeIndex);
             // adjust item size on get scrollview measured size
             adjustItemSize(mItemLargeIndex);
             requestLayout();
+
+            if (mItemChangedListener != null) {
+                mItemChangedListener.onChanged(mItemLargeIndex, mItemLargeIndex);
+            }
         }
     }
 

@@ -49,7 +49,16 @@ Use in xml layout file:
 
 ```
 mCustomScrollView = (CustomScrollView) findViewById(R.id.custom_scrollView);
+// Set scroll end animation
 mCustomScrollView.setInterpolator(new OvershootInterpolator());
+// Listener item change event
+mCustomScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
+    @Override
+    public void onChanged(int prev, int cur) {
+        Log.i(TAG, String.format("prev:%d, cur:%d", prev, cur));
+    }
+});
+// Set child view
 mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
     @Override
     public int getCount() {

@@ -27,7 +27,7 @@ import android.widget.TextView;
 /**
  * Created by Administrator on 2015/10/21.
  * Future work:
- * <p>* Scroll animation on touch release </p>
+ * <p>* Scroll animation on touch release (ok)</p>
  * <p>* Don't store item view size in its tag </p>
  * <p>* Expose getter and setter methods</p>
  * <p>* Improve performance with view recycler</p>

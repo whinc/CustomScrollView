@@ -5,9 +5,9 @@
 
 ### Integration （集成）
 
-I host this lib in [jcenter][1] but it has not been published yet.
+I host this library in [jcenter][1] but it has not been published yet.
 
-You can use in gradle like below:
+You need to use in gradle like below(add additional repository address):
 
 ```
 repositories {
@@ -18,13 +18,13 @@ repositories {
 
 dependencies {
     ...
-    compile 'com.whinc.widget:customscrollview:1.0.8'
+    compile 'com.whinc.widget:customscrollview:1.0.9'
 }
 ```
 
 ### How to use （如何使用）
 
-Use in xml layout file:
+Create a CustomScrollView with xml layout:
 
 ```
 <RelativeLayout
@@ -48,34 +48,38 @@ Use in xml layout file:
         />
 ```
 
+Create a CustomScrollView with java code:
+
 ```
-mCustomScrollView = (CustomScrollView) findViewById(R.id.custom_scrollView);
-// Set scroll end animation
-mCustomScrollView.setInterpolator(new OvershootInterpolator());
-// Listener item change event
-mCustomScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
+CustomScrollView customScrollView = new CustomScrollView(this);
+customScrollView.setItemWidth(200);
+customScrollView.setItemHeight(240);
+customScrollView.setItemLargeWidth(350);
+customScrollView.setItemLargeHeight(450);
+customScrollView.setScrollFactor(0.5f);
+customScrollView.setScrollSpeed(CustomScrollView.SCROLL_SPEED_FAST);
+customScrollView.setScrollItemLeastDistance(10);
+customScrollView.setInterpolator(new OvershootInterpolator());
+customScrollView.setOnItemChangedListener(new CustomScrollView.OnItemChangedListener() {
     @Override
     public void onChanged(final CustomScrollView view, int prev, int cur) {
         Log.i(TAG, String.format("prev:%d, cur:%d", prev, cur));
     }
 });
-// Set child view
-mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
+final int count = 3;
+customScrollView.setAdapter(new CustomScrollView.Adapter() {
     @Override
     public int getCount() {
-        return finalN;
+        return count;
     }
 
     @Override
     public View getView(ViewGroup parent) {
-        View view = new ImageView(MainActivity.this);
-        view.setBackgroundResource(R.drawable.image);
+        View view = new ImageView(SecondActivity.this);
+        view.setBackgroundResource(R.drawable.test_image);
         return view;
     }
 });
-
-// scroll left
-mCustomScrollView.scrollBy(1);
 ```
 
 ### Introduce to custom attributes （自定义属性说明）

@@ -1,5 +1,6 @@
 package com.whinc.customscrollview;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -146,5 +147,11 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.stop_auto_scroll_button)
     protected void stopAutoScroll() {
         mAutoScroll = false;
+    }
+
+    @OnClick(R.id.goto_second_activity_button)
+    protected void startSencodActivity() {
+        Intent intent = new Intent(this, SecondActivity.class);
+        startActivity(intent);
     }
 }

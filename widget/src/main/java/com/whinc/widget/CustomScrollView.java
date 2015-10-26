@@ -29,13 +29,15 @@ import android.widget.TextView;
  * Future work:
  * <p>* Scroll animation on touch release (ok)</p>
  * <p>* Don't store item view size in its tag </p>
- * <p>* Expose getter and setter methods</p>
+ * <p>* Expose getter and setter methods, animation duration, interpolator(ok)</p>
  * <p>* Improve performance with view recycler</p>
  */
 public class CustomScrollView extends FrameLayout{
+    public static final int SCROLL_SPEED_SLOW = 0;
+    public static final int SCROLL_SPEED_NORMAL = 1;
+    public static final int SCROLL_SPEED_FAST = 2;
     private static final String TAG = CustomScrollView.class.getSimpleName();
-    private static final boolean DEBUG = false;
-
+    private static final boolean DEBUG = true;
     private static final int DURATION = 500;        // ms
     private static final int DEFAULT_ITEM_WIDTH = 200;
     private static final int DEFAULT_ITEM_HEIGHT = DEFAULT_ITEM_WIDTH * 4 / 3;
@@ -44,27 +46,19 @@ public class CustomScrollView extends FrameLayout{
     private static final int DEFAULT_ITEM_LARGE_HEIGHT = DEFAULT_ITEM_HEIGHT * 2;
     private static final float DEFAULT_SCROLL_FACTOR = 0.5f;
     private static final int DEFAULT_TOUCH_DIFF = 20;
-
-    public static final int SCROLL_SPEED_SLOW = 0;
-    public static final int SCROLL_SPEED_NORMAL = 1;
-    public static final int SCROLL_SPEED_FAST = 2;
     private ValueAnimator mScaleAnimator;
-
-    @IntDef({SCROLL_SPEED_SLOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
-    private @interface ScrollSpeed {}
-
     /** scroll action */
     private Runnable mScrollRunnable;
     /** Destination index that want scroll to */
     private int mDestItemLargeIndex = -1;
     /** Width of ScrollView */
     private int mWidth;
-
-    /* XML layout attributes */
     /** Height of ScrollView */
     private int mHeight;
     /** Width of item in ScrollView */
     private int mItemWidth;
+
+    /* XML layout attributes */
     /** Height of item in ScrollView */
     private int mItemHeight;
     /** Spacing between each item in ScrollView */
@@ -88,6 +82,7 @@ public class CustomScrollView extends FrameLayout{
     private ValueAnimator mTranslationAnimator;
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
+
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
@@ -96,16 +91,78 @@ public class CustomScrollView extends FrameLayout{
         super(context, attrs);
         init(context, attrs);
     }
-
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context, attrs);
     }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    public int getItemWidth() {
+        return mItemWidth;
+    }
+
+    public void setItemWidth(int itemWidth) {
+        mItemWidth = itemWidth;
+    }
+
+    public int getItemHeight() {
+        return mItemHeight;
+    }
+
+    public void setItemHeight(int itemHeight) {
+        mItemHeight = itemHeight;
+    }
+
+    public int getItemMargin() {
+        return mItemMargin;
+    }
+
+    public void setItemMargin(int itemMargin) {
+        mItemMargin = itemMargin;
+    }
+
+    public int getItemLargeWidth() {
+        return mItemLargeWidth;
+    }
+
+    public void setItemLargeWidth(int itemLargeWidth) {
+        mItemLargeWidth = itemLargeWidth;
+    }
+
+    public int getItemLargeHeight() {
+        return mItemLargeHeight;
+    }
+
+    public void setItemLargeHeight(int itemLargeHeight) {
+        mItemLargeHeight = itemLargeHeight;
+    }
+
+    public float getScrollFactor() {
+        return mScrollFactor;
+    }
+
+    public void setScrollFactor(float scrollFactor) {
+        mScrollFactor = scrollFactor;
+    }
+
+    public int getScrollItemLeastDistance() {
+        return mScrollItemLeastDistance;
+    }
+
+    public void setScrollItemLeastDistance(int scrollItemLeastDistance) {
+        mScrollItemLeastDistance = scrollItemLeastDistance;
+    }
+
+    public int getScrollSpeed() {
+        return mScrollSpeed;
+    }
+
+    public void setScrollSpeed(@ScrollSpeed int scrollSpeed) {
+        mScrollSpeed = scrollSpeed;
     }
 
     /** Get current large item index. */
@@ -180,7 +237,7 @@ public class CustomScrollView extends FrameLayout{
         }
 
         // post scroll event until scroll to destination
-        getHandler().postDelayed(mScrollRunnable, scrollDelay);
+        getHandler().postDelayed(mScrollRunnable, delay);
     }
 
     /**
@@ -245,7 +302,9 @@ public class CustomScrollView extends FrameLayout{
         if (mWidth <= 0) {      // store measured size
             mWidth = getMeasuredWidth();
             mHeight = getMeasuredHeight();
-            reset();
+            if (getChildCount() > 0) {
+                reset();
+            }
         }
 
         // Measure children
@@ -667,6 +726,9 @@ public class CustomScrollView extends FrameLayout{
             Log.i(TAG, msg);
         }
     }
+
+    @IntDef({SCROLL_SPEED_SLOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
+    private @interface ScrollSpeed {}
 
     public interface Adapter {
         int getCount();

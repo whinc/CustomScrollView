@@ -1,5 +1,7 @@
 package com.whinc.widget;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -16,6 +18,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -23,13 +26,15 @@ import android.widget.TextView;
 
 /**
  * Created by Administrator on 2015/10/21.
- * Rest work:
- * * Expose getter and setter methods
- * * Improve performance with view recycler
+ * Future work:
+ * <p>* Scroll animation on touch release </p>
+ * <p>* Don't store item view size in its tag </p>
+ * <p>* Expose getter and setter methods</p>
+ * <p>* Improve performance with view recycler</p>
  */
 public class CustomScrollView extends FrameLayout{
     private static final String TAG = CustomScrollView.class.getSimpleName();
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private static final int DURATION = 500;        // ms
     private static final int DEFAULT_ITEM_WIDTH = 200;
@@ -43,6 +48,8 @@ public class CustomScrollView extends FrameLayout{
     public static final int SCROLL_SPEED_SLOW = 0;
     public static final int SCROLL_SPEED_NORMAL = 1;
     public static final int SCROLL_SPEED_FAST = 2;
+    private ValueAnimator mScaleAnimator;
+
     @IntDef({SCROLL_SPEED_SLOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
     private @interface ScrollSpeed {}
 
@@ -51,7 +58,7 @@ public class CustomScrollView extends FrameLayout{
     /** Destination index that want scroll to */
     private int mDestItemLargeIndex = -1;
     /** Width of ScrollView */
-    private int mWidth;;
+    private int mWidth;
 
     /* XML layout attributes */
     /** Height of ScrollView */
@@ -78,7 +85,7 @@ public class CustomScrollView extends FrameLayout{
     private Context mContext;
     private int mTranslationX = 0;
     private GestureDetector mGestureDetector;
-    private ValueAnimator mAnimator;
+    private ValueAnimator mTranslationAnimator;
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     public CustomScrollView(Context context) {
@@ -269,7 +276,7 @@ public class CustomScrollView extends FrameLayout{
         if (itemCenterX < centerLine) {          // locate in left side of CustomScrollView
             if (mItemLargeIndex < childCount - 1) {
                 if (distanceX > 0) {            // scroll left
-                    // 中间item向左下方扩展，左边固定
+                    // 中间item，左边固定，向左下方扩展
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
@@ -278,7 +285,7 @@ public class CustomScrollView extends FrameLayout{
                     rect1.top += Math.round(deltaY);
 //                    print("center", rect1);
 
-                    // 右侧item向左上方扩展，右边固定
+                    // 右侧item，右边固定，向左上方扩展
                     View view2 = getChildAt(mItemLargeIndex + 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.left -= Math.round(deltaX);
@@ -298,7 +305,7 @@ public class CustomScrollView extends FrameLayout{
                         }
                     }
                 } else if (distanceX < 0) {     // scroll right
-                    // 中间item向右上方扩展，左边固定
+                    // 中间item，左边固定，向右上方扩展
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
@@ -307,7 +314,7 @@ public class CustomScrollView extends FrameLayout{
                     rect1.top -= Math.round(deltaY);
 //                    print("center", rect1);
 
-                    // 右侧item向右下方扩展， 右边固定
+                    // 右侧item，右边固定，向右下方扩展
                     View view2 = getChildAt(mItemLargeIndex + 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.left += Math.round(deltaX);
@@ -318,7 +325,7 @@ public class CustomScrollView extends FrameLayout{
         } else if (itemCenterX > centerLine) {      // locate in right side of CustomScrollView
             if (mItemLargeIndex > 0) {
                 if (distanceX > 0) {                // scroll left
-                    // 中间item向左上方扩展，右边固定
+                    // 中间item，右边固定，向左上方扩展
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
@@ -328,14 +335,14 @@ public class CustomScrollView extends FrameLayout{
 //                        Log.i(TAG, String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
 //                    print("center", rect1);
 
-                    // 左侧item向左下方扩展，左边固定
+                    // 左侧item，左边固定，向左下方扩展
                     View view2 = getChildAt(mItemLargeIndex - 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.right -= Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
 //                    print("left", rect2);
                 } else if (distanceX < 0) {     // scroll right
-                    // 中间item向右下方扩展，右边固定
+                    // 中间item，右边固定，向右下方扩展
                     View view1 = getChildAt(mItemLargeIndex);
                     Rect rect1 = (Rect) view1.getTag();
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
@@ -345,7 +352,7 @@ public class CustomScrollView extends FrameLayout{
 //                    log(String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
 //                    print("center", rect1);
 
-                    // 左侧item向右上方扩展，左边固定
+                    // 左侧item，左边固定，向右上方扩展
                     View view2 = getChildAt(mItemLargeIndex - 1);
                     Rect rect2 = (Rect) view2.getTag();
                     rect2.right += Math.round(deltaX);
@@ -443,20 +450,21 @@ public class CustomScrollView extends FrameLayout{
                 stopAnimation();
                 break;
             case MotionEvent.ACTION_UP:
-                playAnimation();
+                smoothReset();
                 break;
         }
         mGestureDetector.onTouchEvent(event);
         return true;
     }
 
-    private void playAnimation() {
+    /** Reset position and size of each ScrollView item with smooth animation */
+    private void smoothReset() {
         if (getChildCount() <= 0) {
             return;
         }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
-        int newIndex = mItemLargeIndex;
+        int oldIndex = mItemLargeIndex, newIndex = oldIndex;
         Rect centerRect = (Rect)getChildAt(mItemLargeIndex).getTag();
         if (mItemLargeIndex > 0) {
             Rect leftRect = (Rect)getChildAt(mItemLargeIndex - 1).getTag();
@@ -475,33 +483,86 @@ public class CustomScrollView extends FrameLayout{
         if (mItemChangedListener != null && mItemLargeIndex != newIndex) {
             mItemChangedListener.onChanged(this, mItemLargeIndex, newIndex);
         }
-
         mItemLargeIndex = newIndex;
 
-        log("item large index:" + newIndex);
-        adjustItemSize(newIndex);
+//        log("item large index:" + newIndex);
+        final int scrollDirection = (newIndex - oldIndex);
+        if (scrollDirection == 0) {
+            adjustItemSize(newIndex);
+        } else {
+            // Scroll item scale animator
+            final Rect newRect = getViewRect(newIndex);
+            final Rect oldRect = getViewRect(oldIndex);
+            mScaleAnimator = ValueAnimator.ofInt(newRect.width(), mItemLargeWidth);
+            mScaleAnimator.setDuration(DURATION / 2);
+            mScaleAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+            mScaleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    int width = (Integer) animation.getAnimatedValue();
+                    int height = (int) (width * getItemWHRatio());
+                    if (scrollDirection > 0) {      // scroll left
+                        // newIndex item 右边固定，向左上方扩展
+                        newRect.left = newRect.right - width;
+                        newRect.top = mHeight - height;
 
+                        // oldIndex item 左边固定，向左下方扩展
+                        oldRect.right = oldRect.left + (mItemLargeWidth + mItemWidth - newRect.width());
+                        oldRect.top = mHeight - (mItemLargeHeight + mItemHeight - height);
+                    } else {                        // scroll right
+                        // newIndex item 左边固定，向右上方扩展
+                        newRect.right = newRect.left + width;
+                        newRect.top = mHeight - height;
+
+                        // oldIndex item 右边固定，向右下方扩展
+                        oldRect.left = oldRect.right - (mItemLargeWidth + mItemWidth - newRect.width());
+                        oldRect.top = mHeight - (mItemHeight + mItemLargeHeight - height);
+                    }
+                }
+            });
+            mScaleAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    adjustItemSize(mItemLargeIndex);
+                }
+            });
+            mScaleAnimator.start();
+        }
+
+        // Scroll item translation animator
         final int destTranslationX = getTranslateX(newIndex);
         final int srcTranslationX = mTranslationX;
-        // scroll end animation
-        mAnimator = ValueAnimator.ofInt(srcTranslationX, destTranslationX);
-        mAnimator.setDuration(DURATION);
-        mAnimator.setInterpolator(mInterpolator);
-        mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+        mTranslationAnimator = ValueAnimator.ofInt(srcTranslationX, destTranslationX);
+        mTranslationAnimator.setDuration(DURATION);
+        mTranslationAnimator.setInterpolator(mInterpolator);
+        mTranslationAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                float fraction = animation.getAnimatedFraction();
-                mTranslationX = (int) (srcTranslationX + (destTranslationX - srcTranslationX) * fraction);
+                mTranslationX = (Integer) animation.getAnimatedValue();
                 requestLayout();
             }
         });
-        mAnimator.start();
+        mTranslationAnimator.start();
     }
 
+    /** Stop running animations on scrollview items */
     private void stopAnimation() {
-        if (mAnimator != null && mAnimator.isRunning()) {
-            mAnimator.cancel();
+        if (mTranslationAnimator != null && mTranslationAnimator.isRunning()) {
+            mTranslationAnimator.cancel();
         }
+        if (mScaleAnimator != null && mScaleAnimator.isRunning()) {
+            mScaleAnimator.cancel();;
+        }
+    }
+
+    /** Get the rect presents view's layout position and size */
+    private Rect getViewRect(int index) {
+        return (Rect) getChildAt(index).getTag();
+    }
+
+    private void setViewRect(int index, Rect rect) {
+        getChildAt(index).setTag(rect);
     }
 
     /** Remove all child items  */

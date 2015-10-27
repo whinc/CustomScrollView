@@ -82,6 +82,7 @@ public class CustomScrollView extends FrameLayout{
     private ValueAnimator mTranslationAnimator;
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
+    private boolean mInitialized = false;
 
     public CustomScrollView(Context context) {
         super(context);
@@ -181,6 +182,8 @@ public class CustomScrollView extends FrameLayout{
     public void setAdapter(Adapter adapter) {
         // remove items
         clearItems();
+        // set flag to uninitialized
+        mInitialized = false;
 
         if (adapter == null) {
             mAdapter = null;
@@ -199,10 +202,10 @@ public class CustomScrollView extends FrameLayout{
             }
         }
 
-        // If setAdapter() is called before scroll view can show call reset() on time in onMeasure() of
-        // scroll view, otherwise call reset() immediately.
+        // If setAdapter() is called before scroll view can show call initialize() on time in onMeasure() of
+        // scroll view, otherwise call initialize() immediately.
         if (isShown()) {
-            reset();
+            initialize();
         }
     }
 
@@ -302,9 +305,10 @@ public class CustomScrollView extends FrameLayout{
         if (mWidth <= 0) {      // store measured size
             mWidth = getMeasuredWidth();
             mHeight = getMeasuredHeight();
-            if (getChildCount() > 0) {
-                reset();
-            }
+        }
+
+        if (getChildCount() > 0 && !mInitialized) {
+            initialize();
         }
 
         // Measure children
@@ -640,7 +644,7 @@ public class CustomScrollView extends FrameLayout{
      * @param itemLargeIndex index of large item. if it large than "scroll item count" -1 or small
      *                       than 0, it will be limited to [0, "scroll item count" - 1].
      * */
-    private void reset(int itemLargeIndex) {
+    private void initialize(int itemLargeIndex) {
         mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getChildCount() - 1);
 
         mTranslationX = getTranslateX(mItemLargeIndex);
@@ -651,12 +655,14 @@ public class CustomScrollView extends FrameLayout{
         if (mItemChangedListener != null) {
             mItemChangedListener.onChanged(this, mItemLargeIndex, mItemLargeIndex);
         }
+
+        mInitialized = true;
     }
 
     /** Reset item position,size and translationX, the result is the large item locates in
      * the center of ScrollView and other item locate in two side of the large item equally */
-    private void reset() {
-        reset(getChildCount() / 2);
+    private void initialize() {
+        initialize(getChildCount() / 2);
     }
 
     /** When the nth item is Large Item and center in screen,

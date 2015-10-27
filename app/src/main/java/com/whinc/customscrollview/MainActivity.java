@@ -74,20 +74,21 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})
     protected void addItem(Button btn) {
-        int n = 0;
         switch (btn.getId()) {
             case R.id.add_3_item_button:
-                n = 3;
+                showScrollView(3);
                 break;
             case R.id.add_8_item_button:
-                n = 8;
+                showScrollView(8);
                 break;
         }
-        final int finalN = n;
+    }
+
+    private void showScrollView(final int n) {
         mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
             @Override
             public int getCount() {
-                return finalN;
+                return n;
             }
 
             @Override
@@ -101,6 +102,16 @@ public class MainActivity extends AppCompatActivity {
                 return view;
             }
         });
+        if (mCustomScrollView.getVisibility() != View.VISIBLE) {
+            mCustomScrollView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @OnClick(R.id.hide_button)
+    protected void hideScrollView() {
+        if (mCustomScrollView.getVisibility() == View.VISIBLE) {
+            mCustomScrollView.setVisibility(View.GONE);
+        }
     }
 
     @OnClick(R.id.scroll_left_button)

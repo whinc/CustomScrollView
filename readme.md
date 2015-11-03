@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     ...
-    compile 'com.whinc.widget:customscrollview:1.0.9'
+    compile 'com.whinc.widget:customscrollview:1.1.2'
 }
 ```
 
@@ -74,7 +74,7 @@ customScrollView.setAdapter(new CustomScrollView.Adapter() {
     }
 
     @Override
-    public View getView(ViewGroup parent) {
+    public View getView(ViewGroup parent, int pos) {
         View view = new ImageView(SecondActivity.this);
         view.setBackgroundResource(R.drawable.test_image);
         return view;

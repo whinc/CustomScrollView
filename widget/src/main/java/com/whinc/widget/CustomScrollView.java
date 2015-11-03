@@ -193,7 +193,7 @@ public class CustomScrollView extends FrameLayout{
 
         int count = adapter.getCount();
         for (int i = 0; i < count; ++i) {
-            View view = adapter.getView(this);
+            View view = adapter.getView(this, i);
             if (view != null) {
                 // Rect in view tag used to recode size and coordinate of view
                 view.setTag(new Rect(0, 0, 0, 0));
@@ -739,7 +739,7 @@ public class CustomScrollView extends FrameLayout{
 
     public interface Adapter {
         int getCount();
-        View getView(ViewGroup parent);
+        View getView(ViewGroup parent, int pos);
     }
 
     public interface OnItemChangedListener {

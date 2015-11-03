@@ -154,10 +154,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(ViewGroup viewGroup) {
+        public View getView(ViewGroup viewGroup, int pos) {
             View view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, viewGroup, false);
             ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
             imgView.setImageResource(R.drawable.test_image);
+            Log.i(TAG, "pos:" + pos);
             return view;
         }
     }

@@ -1,5 +1,6 @@
 package com.whinc.customscrollview;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -57,19 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
-            @Override
-            public int getCount() {
-                return count;
-            }
-
-            @Override
-            public View getView(ViewGroup parent) {
-                View view = new ImageView(MainActivity.this);
-                view.setBackgroundResource(R.drawable.test_image);
-                return view;
-            }
-        });
+        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
     }
 
     @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})
@@ -85,23 +74,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showScrollView(final int n) {
-        mCustomScrollView.setAdapter(new CustomScrollView.Adapter() {
-            @Override
-            public int getCount() {
-                return n;
-            }
-
-            @Override
-            public View getView(ViewGroup parent) {
-                /** BUG:这里如果附加到parent view中会出现重复添加View的问题 */
-                /** NEW:增加ScrollView 滑动事件监听 */
-                View view = LayoutInflater.from(MainActivity.this)
-                        .inflate(R.layout.scrollview_item, mCustomScrollView, false);
-                ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
-                imgView.setImageResource(R.drawable.test_image);
-                return view;
-            }
-        });
+        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, n));
         if (mCustomScrollView.getVisibility() != View.VISIBLE) {
             mCustomScrollView.setVisibility(View.VISIBLE);
         }
@@ -164,5 +137,28 @@ public class MainActivity extends AppCompatActivity {
     protected void startSencodActivity() {
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);
+    }
+
+    static class MyScrollViewAdapter implements CustomScrollView.Adapter {
+        private final Context mContext;
+        private final int mCount;
+
+        public MyScrollViewAdapter(Context context, int count) {
+            mContext = context;
+            mCount = count;
+        }
+
+        @Override
+        public int getCount() {
+            return mCount;
+        }
+
+        @Override
+        public View getView(ViewGroup viewGroup) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, viewGroup, false);
+            ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
+            imgView.setImageResource(R.drawable.test_image);
+            return view;
+        }
     }
 }

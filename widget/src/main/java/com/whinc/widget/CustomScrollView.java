@@ -27,10 +27,9 @@ import android.widget.TextView;
 /**
  * Created by Administrator on 2015/10/21.
  * Future work:
- * <p>* Scroll animation on touch release (ok)</p>
- * <p>* Don't store item view size in its tag </p>
- * <p>* Expose getter and setter methods, animation duration, interpolator(ok)</p>
+ * <p>* Don't store item view size in view's tag </p>
  * <p>* Improve performance with view recycler</p>
+ * <p>* getView() method of Adapter add a argument present current item index</p>
  */
 public class CustomScrollView extends FrameLayout{
     public static final int SCROLL_SPEED_SLOW = 0;
@@ -307,7 +306,7 @@ public class CustomScrollView extends FrameLayout{
             mHeight = getMeasuredHeight();
         }
 
-        if (getChildCount() > 0 && !mInitialized) {
+        if (!mInitialized) {
             initialize();
         }
 
@@ -662,7 +661,9 @@ public class CustomScrollView extends FrameLayout{
     /** Reset item position,size and translationX, the result is the large item locates in
      * the center of ScrollView and other item locate in two side of the large item equally */
     private void initialize() {
-        initialize(getChildCount() / 2);
+        if (getChildCount() > 0) {
+            initialize(getChildCount() / 2);
+        }
     }
 
     /** When the nth item is Large Item and center in screen,

@@ -1,11 +1,13 @@
 package com.whinc.customscrollview;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.Property;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -78,21 +80,54 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_decrease_width:
-                increaseScrollViewWith(-50);
+            case R.id.action_fold:
+                foldScrollView();
                 break;
-            case R.id.action_increase_width:
-                increaseScrollViewWith(50);
+            case R.id.action_unfold:
+                unfoldScrollView();
                 break;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private void increaseScrollViewWith(int delta) {
-        ViewGroup.LayoutParams lp = mCustomScrollView.getLayoutParams();
-        lp.width = mCustomScrollView.getWidth() + delta;
-        mCustomScrollView.setLayoutParams(lp);
-        Log.i(TAG, "new width:" + lp.width);
+    private void foldScrollView() {
+        int parentW = ((ViewGroup)mCustomScrollView.getParent()).getWidth();
+        int width = mCustomScrollView.getWidth();
+        ObjectAnimator unfoldXAnimator = ObjectAnimator.ofInt(mCustomScrollView, new Property<CustomScrollView, Integer>(Integer.class, "") {
+            @Override
+            public Integer get(CustomScrollView object) {
+                return mCustomScrollView.getLayoutParams().width;
+            }
+
+            @Override
+            public void set(CustomScrollView object, Integer value) {
+                ViewGroup.LayoutParams lp = mCustomScrollView.getLayoutParams();
+                lp.width = value;
+                mCustomScrollView.setLayoutParams(lp);
+            }
+        }, width, width / 3);
+        unfoldXAnimator.setDuration(1000);
+        unfoldXAnimator.start();
+    }
+
+    private void unfoldScrollView() {
+        int parentW = ((ViewGroup)mCustomScrollView.getParent()).getWidth();
+        int width = mCustomScrollView.getWidth();
+        ObjectAnimator foldXAnimator = ObjectAnimator.ofInt(mCustomScrollView, new Property<CustomScrollView, Integer>(Integer.class, "") {
+            @Override
+            public Integer get(CustomScrollView object) {
+                return mCustomScrollView.getLayoutParams().width;
+            }
+
+            @Override
+            public void set(CustomScrollView object, Integer value) {
+                ViewGroup.LayoutParams lp = mCustomScrollView.getLayoutParams();
+                lp.width = value;
+                mCustomScrollView.setLayoutParams(lp);
+            }
+        }, width, parentW);
+        foldXAnimator.setDuration(1000);
+        foldXAnimator.start();
     }
 
     @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})

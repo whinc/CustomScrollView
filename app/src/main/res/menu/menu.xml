@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/action_decrease_width"
-          android:title="Decrease Width"
+    <item android:id="@+id/action_fold"
+          android:title="Fold"
           app:showAsAction="ifRoom"
         />
-    <item android:id="@+id/action_increase_width"
-          android:title="Increase Width"
+    <item android:id="@+id/action_unfold"
+          android:title="unfold"
           app:showAsAction="ifRoom"
-        />
+          />
 </menu>

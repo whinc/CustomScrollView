@@ -304,11 +304,13 @@ public class CustomScrollView extends FrameLayout{
         // update with and height
         if (mWidth != getMeasuredWidth()) {
             mWidth = getMeasuredWidth();
-            mInitialized = false;
+            if (mInitialized) {
+                adjustTranslation(mItemLargeIndex);
+            }
+            Log.i(TAG, "new Width:" + mWidth);
         }
         if (mHeight != getMeasuredHeight()) {
             mHeight = getMeasuredHeight();
-            mInitialized = false;
         }
 
         if (!mInitialized) {
@@ -650,11 +652,8 @@ public class CustomScrollView extends FrameLayout{
      * */
     private void initialize(int itemLargeIndex) {
         mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getChildCount() - 1);
-
-        mTranslationX = getTranslateX(mItemLargeIndex);
-        // adjust item size on get scrollview measured size
+        adjustTranslation(mItemLargeIndex);
         adjustItemSize(mItemLargeIndex);
-        requestLayout();
 
         if (mItemChangedListener != null) {
             mItemChangedListener.onChanged(this, mItemLargeIndex, mItemLargeIndex);
@@ -667,7 +666,8 @@ public class CustomScrollView extends FrameLayout{
      * the center of ScrollView and other item locate in two side of the large item equally */
     private void initialize() {
         if (getChildCount() > 0) {
-            initialize(getChildCount() / 2);
+            int itemLargeIndex = getChildCount() / 2;
+            initialize(itemLargeIndex);
         }
     }
 
@@ -678,12 +678,12 @@ public class CustomScrollView extends FrameLayout{
             throw new IllegalArgumentException(
                     String.format("Invalid argument n: %d ,n must be in [0, %d]", n, getChildCount()-1));
         }
-        int startX = mWidth / 2;
-        startX -= getLargeItemWM()/2;
+        float startX = mWidth / 2.0f;
+        startX -= (getLargeItemWM() / 2.0f);
         if (n > 0) {
-            startX -= (getItemWM() * n);
+            startX -= getItemWM() * n;
         }
-        return startX;
+        return Math.round(startX);
     }
 
     @Override
@@ -730,6 +730,12 @@ public class CustomScrollView extends FrameLayout{
             } else {
                 rect.set(itemLeft, mHeight - mItemLargeHeight, itemLeft + mItemLargeWidth, mHeight);
             }
+        }
+    }
+
+    private void adjustTranslation(int itemLargeIndex) {
+        if (itemLargeIndex >= 0) {
+            mTranslationX = getTranslateX(itemLargeIndex);
         }
     }
 

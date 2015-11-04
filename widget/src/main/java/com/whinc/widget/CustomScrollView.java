@@ -739,7 +739,7 @@ public class CustomScrollView extends FrameLayout{
 
     public interface Adapter {
         int getCount();
-        View getView(ViewGroup parent, int pos);
+        View getView(CustomScrollView parent, int pos);
     }
 
     public interface OnItemChangedListener {

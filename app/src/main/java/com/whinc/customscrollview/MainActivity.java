@@ -4,8 +4,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
@@ -22,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
     @Bind(R.id.custom_scrollView)
     CustomScrollView mCustomScrollView;
+    @Bind(R.id.toolbar)
+    Toolbar mToolbar;
     private boolean mAutoScroll = false;
 
     @Override
@@ -59,6 +65,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
+
+        setSupportActionBar(mToolbar);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        new MenuInflater(this).inflate(R.menu.menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_decrease_width:
+                increaseScrollViewWith(-50);
+                break;
+            case R.id.action_increase_width:
+                increaseScrollViewWith(50);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void increaseScrollViewWith(int delta) {
+        ViewGroup.LayoutParams lp = mCustomScrollView.getLayoutParams();
+        lp.width = mCustomScrollView.getWidth() + delta;
+        mCustomScrollView.setLayoutParams(lp);
+        Log.i(TAG, "new width:" + lp.width);
     }
 
     @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})

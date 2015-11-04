@@ -301,9 +301,14 @@ public class CustomScrollView extends FrameLayout{
             return;
         }
 
-        if (mWidth <= 0) {      // store measured size
+        // update with and height
+        if (mWidth != getMeasuredWidth()) {
             mWidth = getMeasuredWidth();
+            mInitialized = false;
+        }
+        if (mHeight != getMeasuredHeight()) {
             mHeight = getMeasuredHeight();
+            mInitialized = false;
         }
 
         if (!mInitialized) {

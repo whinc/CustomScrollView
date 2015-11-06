@@ -86,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_unfold:
                 unfoldScrollView();
                 break;
+            case R.id.action_print_large_item_index:
+                Log.i(TAG, "large item index:" + mCustomScrollView.getItemLargeIndex());
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -168,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         if (!mCustomScrollView.isScrolling()) {
             mCustomScrollView.scrollBy(1);
         }
+        Log.i(TAG, "large item index:" + mCustomScrollView.getItemLargeIndex());
     }
 
     @OnClick(R.id.clear_item_button)

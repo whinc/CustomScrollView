@@ -12,7 +12,6 @@ import android.os.Build;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -22,6 +21,8 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.whinc.util.Log;
 
 
 /**
@@ -458,6 +459,7 @@ public class CustomScrollView extends FrameLayout{
     }
 
     private void init(Context context, AttributeSet attrs) {
+        Log.enable(BuildConfig.DEBUG);
         if (isInEditMode()) {
             TextView textView = new TextView(context);
             textView.setText(TAG);

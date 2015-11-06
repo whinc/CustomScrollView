@@ -9,4 +9,8 @@
           android:title="unfold"
           app:showAsAction="ifRoom"
           />
+    <item android:id="@+id/action_print_large_item_index"
+          android:title="print large item index"
+          app:showAsAction="ifRoom"
+        />
 </menu>

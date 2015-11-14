@@ -17,4 +17,16 @@
           android:title="print item tag"
           app:showAsAction="ifRoom"
         />
+    <item android:id="@+id/action_set_3_items"
+          android:title="set 3 items"
+          app:showAsAction="ifRoom"
+        />
+    <item android:id="@+id/action_set_8_items"
+          android:title="set 8 items"
+          app:showAsAction="ifRoom"
+        />
+    <item android:id="@+id/action_set_22_items"
+          android:title="set 22 items"
+          app:showAsAction="ifRoom"
+        />
 </menu>

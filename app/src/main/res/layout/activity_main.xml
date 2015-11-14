@@ -60,23 +60,6 @@
                 android:textAllCaps="false"
                 android:layout_margin="5px"
                 />
-            <Button
-                android:id="@+id/add_3_item_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="3 Item"
-                android:textAllCaps="false"
-                android:layout_margin="5px"
-                />
-
-            <Button
-                android:id="@+id/add_8_item_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="8 Item"
-                android:textAllCaps="false"
-                android:layout_margin="5px"
-                />
 
             <Button
                 android:id="@+id/scroll_left_button"

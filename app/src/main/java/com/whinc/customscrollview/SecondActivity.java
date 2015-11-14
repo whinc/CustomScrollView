@@ -48,7 +48,7 @@ public class SecondActivity extends ActionBarActivity {
             @Override
             public View getView(CustomScrollView parent, int pos) {
                 View view = new ImageView(SecondActivity.this);
-                view.setBackgroundResource(R.drawable.test_image);
+                view.setBackgroundResource(R.drawable.img1);
                 return view;
             }
         });

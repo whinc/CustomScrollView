@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -15,7 +16,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
-import android.widget.Button;
 import android.widget.ImageView;
 
 import com.whinc.widget.CustomScrollView;
@@ -26,11 +26,10 @@ import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
-    @Bind(R.id.custom_scrollView)
-    CustomScrollView mCustomScrollView;
-    @Bind(R.id.toolbar)
-    Toolbar mToolbar;
+    @Bind(R.id.custom_scrollView) CustomScrollView mCustomScrollView;
+    @Bind(R.id.toolbar) Toolbar mToolbar;
     private boolean mAutoScroll = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +91,15 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_print_item_tag:
                 printItemTags();
                 break;
+            case R.id.action_set_3_items:
+                showScrollView(3);
+                break;
+            case R.id.action_set_8_items:
+                showScrollView(8);
+                break;
+            case R.id.action_set_22_items:
+                showScrollView(22);
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -141,18 +149,6 @@ public class MainActivity extends AppCompatActivity {
         }, width, parentW);
         foldXAnimator.setDuration(1000);
         foldXAnimator.start();
-    }
-
-    @OnClick({R.id.add_3_item_button, R.id.add_8_item_button})
-    protected void addItem(Button btn) {
-        switch (btn.getId()) {
-            case R.id.add_3_item_button:
-                showScrollView(3);
-                break;
-            case R.id.add_8_item_button:
-                showScrollView(8);
-                break;
-        }
     }
 
     private void showScrollView(final int n) {
@@ -225,6 +221,30 @@ public class MainActivity extends AppCompatActivity {
     static class MyScrollViewAdapter implements CustomScrollView.Adapter {
         private final Context mContext;
         private final int mCount;
+        private @IntegerRes int [] mDrawableList = new int[] {
+                R.drawable.img1,
+                R.drawable.img2,
+                R.drawable.img3,
+                R.drawable.img4,
+                R.drawable.img5,
+                R.drawable.img6,
+                R.drawable.img7,
+                R.drawable.img8,
+                R.drawable.img9,
+                R.drawable.img10,
+                R.drawable.img11,
+                R.drawable.img12,
+                R.drawable.img13,
+                R.drawable.img14,
+                R.drawable.img15,
+                R.drawable.img16,
+                R.drawable.img17,
+                R.drawable.img18,
+                R.drawable.img19,
+                R.drawable.img20,
+                R.drawable.img21,
+                R.drawable.img22,
+        };
 
         public MyScrollViewAdapter(Context context, int count) {
             mContext = context;
@@ -238,11 +258,13 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public View getView(CustomScrollView parent, int pos) {
+            if (pos >= mDrawableList.length) {
+                throw new IndexOutOfBoundsException("size:" + mDrawableList.length + ", index:" + pos);
+            }
             View view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
             ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
-            imgView.setImageResource(R.drawable.test_image);
+            imgView.setImageResource(mDrawableList[pos]);
             Log.i(TAG, "pos:" + pos);
-            Log.i(TAG, "itemW:" + parent.getItemWidth() + ", itemH:" + parent.getItemHeight());
             view.setTag(pos);
             return view;
         }

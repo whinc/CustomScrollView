@@ -53,14 +53,14 @@ def pomConfig = {
         }
     }
 //    //这里有引号，并且有个空格，否则生成不了依赖，主要是这里的dependencies并不是build.gradle里的dependencies，而gradle会把他当成自身的dependencies处理
-//    "dependencies " {
-//        dependency{
-//            groupId "com.alibaba"
-//            artifactId "fastjson"
-//            "version " "1.2.6"
-//            //同dependencies
-//        }
-//    }
+    "dependencies " {
+        dependency{
+            groupId "com.whinc.util"
+            artifactId "androidtoolkit"
+            "version " "0.1.0"
+            //同dependencies
+        }
+    }
 
 }
 

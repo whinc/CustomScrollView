@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     ...
-    compile 'com.whinc.widget:customscrollview:1.1.4'
+    compile 'com.whinc.widget:customscrollview:1.1.6'
 }
 ```
 

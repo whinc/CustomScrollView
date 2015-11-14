@@ -200,7 +200,7 @@ public class CustomScrollView extends FrameLayout{
         for (int i = 0; i < count; ++i) {
             View view = adapter.getView(this, i);
             if (view != null) {
-                // Rect in view tag used to recode size and coordinate of view
+                // Use a rect to recode size and coordinate of view
                 mViewRectMap.put(view, new Rect(0, 0, 0, 0));
                 addView(view);
             }

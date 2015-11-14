@@ -35,7 +35,7 @@ import java.util.Map;
  * <p>* Improve performance with view recycler</p>
  * <p style="text-decoration:line-through">* getView() method of Adapter add a argument present current item index</p>
  */
-public class CustomScrollView extends FrameLayout{
+public class CustomScrollView extends ViewGroup {
     public static final int SCROLL_SPEED_SLOW = 0;
     public static final int SCROLL_SPEED_NORMAL = 1;
     public static final int SCROLL_SPEED_FAST = 2;
@@ -707,8 +707,6 @@ public class CustomScrollView extends FrameLayout{
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-
         if (isInEditMode()) {
             return;
         }

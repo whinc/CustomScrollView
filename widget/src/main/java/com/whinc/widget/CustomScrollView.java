@@ -12,6 +12,7 @@ import android.os.Build;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -23,9 +24,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.whinc.util.Log;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Administrator on 2015/10/21.
@@ -50,31 +48,55 @@ public class CustomScrollView extends ViewGroup {
     private static final float DEFAULT_SCROLL_FACTOR = 0.5f;
     private static final int DEFAULT_TOUCH_DIFF = 20;
     private ValueAnimator mScaleAnimator;
-    /** scroll action */
+    /**
+     * scroll action
+     */
     private Runnable mScrollRunnable;
-    /** Destination index that want scroll to */
+    /**
+     * Destination index that want scroll to
+     */
     private int mDestItemLargeIndex = -1;
-    /** Width of ScrollView */
+    /**
+     * Width of ScrollView
+     */
     private int mWidth;
-    /** Height of ScrollView */
+    /**
+     * Height of ScrollView
+     */
     private int mHeight;
-    /** Width of item in ScrollView */
+    /**
+     * Width of item in ScrollView
+     */
     private int mItemWidth;
 
     /* XML layout attributes */
-    /** Height of item in ScrollView */
+    /**
+     * Height of item in ScrollView
+     */
     private int mItemHeight;
-    /** Spacing between each item in ScrollView */
+    /**
+     * Spacing between each item in ScrollView
+     */
     private int mItemMargin;
-    /** Width of large item in ScrollView */
+    /**
+     * Width of large item in ScrollView
+     */
     private int mItemLargeWidth;
-    /** Height of large item in ScrollView */
+    /**
+     * Height of large item in ScrollView
+     */
     private int mItemLargeHeight;
-    /** The least distance scroll to next item */
+    /**
+     * The least distance scroll to next item
+     */
     private int mScrollItemLeastDistance;
-    /** Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] ) */
+    /**
+     * Affect scroll sensibility ([real scroll distance] = [pointer scroll distance] * [scroll factor] )
+     */
     private float mScrollFactor;
-    /** Scroll speed, reference to {@link com.whinc.widget.CustomScrollView.ScrollSpeed} */
+    /**
+     * Scroll speed, reference to {@link com.whinc.widget.CustomScrollView.ScrollSpeed}
+     */
     private int mScrollSpeed;
     private OnItemChangedListener mItemChangedListener;
     private int mItemLargeIndex = -1;
@@ -86,20 +108,28 @@ public class CustomScrollView extends ViewGroup {
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     private boolean mInitialized = false;
-    private Map<View, Rect> mViewRectMap = new HashMap<>();
+    //    private Map<View, Rect> mViewsRect = new HashMap<>();
+    private View[] mViews = null;
+    private Rect[] mViewsRect = null;
+    private int mFirstActiveViewPos = -1;
+    private int mLastActiveViewPos = -1;
+    private int mVisibleCount;
 
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
     }
+
     public CustomScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
     }
+
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context, attrs);
     }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
@@ -170,7 +200,9 @@ public class CustomScrollView extends ViewGroup {
         mScrollSpeed = scrollSpeed;
     }
 
-    /** Get current large item index. */
+    /**
+     * Get current large item index.
+     */
     public int getItemLargeIndex() {
         return mItemLargeIndex;
     }
@@ -197,13 +229,28 @@ public class CustomScrollView extends ViewGroup {
         mAdapter = adapter;
 
         int count = adapter.getCount();
-        for (int i = 0; i < count; ++i) {
-            View view = adapter.getView(this, i);
-            if (view != null) {
-                // Use a rect to recode size and coordinate of view
-                mViewRectMap.put(view, new Rect(0, 0, 0, 0));
-                addView(view);
-            }
+        mViews = new View[count];
+        mViewsRect = new Rect[count];
+
+        DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
+        int screenWidth = dm.widthPixels;
+        screenWidth -= getLargeItemWM();
+        mVisibleCount = 1;
+        while (screenWidth > 0) {
+            mVisibleCount += 1;
+            screenWidth -= getItemWM();
+        }
+        mVisibleCount += 1;     // +1
+        if (mVisibleCount < count) {
+            mFirstActiveViewPos = count / 2 - mVisibleCount / 2;
+            mLastActiveViewPos = mFirstActiveViewPos + mVisibleCount - 1;
+        } else {
+            mFirstActiveViewPos = 0;
+            mLastActiveViewPos = mFirstActiveViewPos + count - 1;
+        }
+        Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d]", count, mVisibleCount, mFirstActiveViewPos, mLastActiveViewPos));
+        for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+            getItem(i);
         }
 
         // If setAdapter() is called before scroll view can show call initialize() on time in onMeasure() of
@@ -213,7 +260,9 @@ public class CustomScrollView extends ViewGroup {
         }
     }
 
-    /** Scroll to specified position */
+    /**
+     * Scroll to specified position
+     */
     public void scrollTo(int index) {
         scrollBy(index - mItemLargeIndex);
     }
@@ -250,8 +299,9 @@ public class CustomScrollView extends ViewGroup {
     /**
      * <p>Scroll left or right by specified items. If ScrollView is scrolling this call will be
      * ignored.</p>
+     *
      * @param itemCount item count need to scroll by. If it large than "scroll item count" -1 or small
-     *                       than 0, it will be limited to [0, "scroll item count" - 1].
+     *                  than 0, it will be limited to [0, "scroll item count" - 1].
      */
     public void scrollBy(int itemCount) {
         if (isScrolling()) {
@@ -261,7 +311,7 @@ public class CustomScrollView extends ViewGroup {
         mIsScrolling = true;
 
         // limit index range
-        mDestItemLargeIndex = Math.min(Math.max(mItemLargeIndex + itemCount, 0), getChildCount() - 1);
+        mDestItemLargeIndex = Math.min(Math.max(mItemLargeIndex + itemCount, 0), getItemCount() - 1);
         int scrollDelay = Integer.MAX_VALUE;
         int scrollDistanceX = 10 * (itemCount > 0 ? 1 : -1);
 
@@ -285,12 +335,16 @@ public class CustomScrollView extends ViewGroup {
         scrollBy(itemCount, mDestItemLargeIndex, scrollDistanceX, scrollDelay);
     }
 
-    /** Return true is ScrollView is scrolling, otherwise return false. */
+    /**
+     * Return true is ScrollView is scrolling, otherwise return false.
+     */
     public boolean isScrolling() {
         return mIsScrolling;
     }
 
-    /** Stop scrolling */
+    /**
+     * Stop scrolling
+     */
     public void stopScroll() {
         getHandler().removeCallbacks(mScrollRunnable);
         mScrollRunnable = null;
@@ -323,17 +377,20 @@ public class CustomScrollView extends ViewGroup {
         }
 
         // Measure children
-        for (int i = 0; i < getChildCount(); ++i) {
-            View child = getChildAt(i);
-            Rect rect = mViewRectMap.get(child);
-            int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
-            int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
-            measureChild(child, widthSpec, heightSpec);
+        if (mVisibleCount > 0) {
+            for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+                View child = getItem(i);
+                Rect rect = getItemRect(i);
+                int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
+                int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
+                measureChild(child, widthSpec, heightSpec);
+            }
         }
-
     }
 
-    /** Called when scroll current view */
+    /**
+     * Called when scroll current view
+     */
     private boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (Math.abs(distanceX) < 1) {
             return true;
@@ -342,17 +399,17 @@ public class CustomScrollView extends ViewGroup {
         distanceX *= mScrollFactor;
         mTranslationX -= distanceX;
         float ratio = Math.abs(distanceX / getItemWM());
-        int childCount = getChildCount();
-        View activeView = getChildAt(mItemLargeIndex);
-        Rect rect = mViewRectMap.get(activeView);
-        int itemCenterX = mTranslationX + rect.left + rect.width()/2;
+        int childCount = getItemCount();
+        View activeView = getItem(mItemLargeIndex);
+        Rect rect = getItemRect(mItemLargeIndex);
+        int itemCenterX = mTranslationX + rect.left + rect.width() / 2;
         int centerLine = mWidth / 2;
         if (itemCenterX < centerLine) {          // locate in left side of CustomScrollView
             if (mItemLargeIndex < childCount - 1) {
                 if (distanceX > 0) {            // scroll left
                     // 中间item，左边固定，向左下方扩展
-                    View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = mViewRectMap.get(view1);
+                    View view1 = getItem(mItemLargeIndex);
+                    Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right -= Math.round(deltaX);
@@ -360,8 +417,8 @@ public class CustomScrollView extends ViewGroup {
 //                    print("center", rect1);
 
                     // 右侧item，右边固定，向左上方扩展
-                    View view2 = getChildAt(mItemLargeIndex + 1);
-                    Rect rect2 = mViewRectMap.get(view2);
+                    View view2 = getItem(mItemLargeIndex + 1);
+                    Rect rect2 = getItemRect(mItemLargeIndex + 1);
                     rect2.left -= Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
 //                    print("right", rect2);
@@ -380,8 +437,8 @@ public class CustomScrollView extends ViewGroup {
                     }
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，左边固定，向右上方扩展
-                    View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = mViewRectMap.get(view1);
+                    View view1 = getItem(mItemLargeIndex);
+                    Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right += Math.round(deltaX);
@@ -389,8 +446,8 @@ public class CustomScrollView extends ViewGroup {
 //                    print("center", rect1);
 
                     // 右侧item，右边固定，向右下方扩展
-                    View view2 = getChildAt(mItemLargeIndex + 1);
-                    Rect rect2 = mViewRectMap.get(view2);
+                    View view2 = getItem(mItemLargeIndex + 1);
+                    Rect rect2 = getItemRect(mItemLargeIndex + 1);
                     rect2.left += Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
 //                    print("right", rect2);
@@ -400,8 +457,8 @@ public class CustomScrollView extends ViewGroup {
             if (mItemLargeIndex > 0) {
                 if (distanceX > 0) {                // scroll left
                     // 中间item，右边固定，向左上方扩展
-                    View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = mViewRectMap.get(view1);
+                    View view1 = getItem(mItemLargeIndex);
+                    Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left -= Math.round(deltaX);
@@ -410,15 +467,15 @@ public class CustomScrollView extends ViewGroup {
 //                    print("center", rect1);
 
                     // 左侧item，左边固定，向左下方扩展
-                    View view2 = getChildAt(mItemLargeIndex - 1);
-                    Rect rect2 = mViewRectMap.get(view2);
+                    View view2 = getItem(mItemLargeIndex - 1);
+                    Rect rect2 = getItemRect(mItemLargeIndex - 1);
                     rect2.right -= Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
 //                    print("left", rect2);
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，右边固定，向右下方扩展
-                    View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = mViewRectMap.get(view1);
+                    View view1 = getItem(mItemLargeIndex);
+                    Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left += Math.round(deltaX);
@@ -427,8 +484,8 @@ public class CustomScrollView extends ViewGroup {
 //                    print("center", rect1);
 
                     // 左侧item，左边固定，向右上方扩展
-                    View view2 = getChildAt(mItemLargeIndex - 1);
-                    Rect rect2 = mViewRectMap.get(view2);
+                    View view2 = getItem(mItemLargeIndex - 1);
+                    Rect rect2 = getItemRect(mItemLargeIndex - 1);
                     rect2.right += Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
 //                    print("left", rect2);
@@ -455,15 +512,18 @@ public class CustomScrollView extends ViewGroup {
         return 1.0f * mItemHeight / mItemWidth;
     }
 
-    /** Set the end animator TimeInterpolator, if set null it will use the default
+    /**
+     * Set the end animator TimeInterpolator, if set null it will use the default
      * {@link android.view.animation.LinearInterpolator}
-     * @param interpolator reference to subclass of {@link Interpolator}*/
+     *
+     * @param interpolator reference to subclass of {@link Interpolator}
+     */
     public void setInterpolator(@Nullable Interpolator interpolator) {
         mInterpolator = interpolator;
     }
 
     private void init(Context context, AttributeSet attrs) {
-        Log.enable(BuildConfig.DEBUG);
+        Log.enable(true);
         if (isInEditMode()) {
             TextView textView = new TextView(context);
             textView.setText(TAG);
@@ -508,7 +568,7 @@ public class CustomScrollView extends ViewGroup {
         mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                if (getChildCount() <= 0) {
+                if (getItemCount() <= 0) {
                     log("Has no child view!");
                     return true;
                 } else {
@@ -532,24 +592,26 @@ public class CustomScrollView extends ViewGroup {
         return true;
     }
 
-    /** Reset position and size of each ScrollView item with smooth animation */
+    /**
+     * Reset position and size of each ScrollView item with smooth animation
+     */
     private void smoothReset() {
-        if (getChildCount() <= 0) {
+        if (getItemCount() <= 0) {
             return;
         }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
         int oldIndex = mItemLargeIndex, newIndex = oldIndex;
-        Rect centerRect = mViewRectMap.get(getChildAt(mItemLargeIndex));
+        Rect centerRect = mViewsRect[mItemLargeIndex];
         if (mItemLargeIndex > 0) {
-            Rect leftRect = mViewRectMap.get(getChildAt(mItemLargeIndex - 1));
+            Rect leftRect = mViewsRect[mItemLargeIndex - 1];
             if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && leftRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex - 1;
             }
         }
-        if (mItemLargeIndex < getChildCount() - 1) {
-            Rect rightRect = mViewRectMap.get(getChildAt(mItemLargeIndex + 1));
+        if (mItemLargeIndex < getItemCount() - 1) {
+            Rect rightRect = mViewsRect[mItemLargeIndex + 1];
             if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && rightRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex + 1;
@@ -566,8 +628,8 @@ public class CustomScrollView extends ViewGroup {
             adjustItemSize(newIndex);
         } else {
             // Scroll item scale animator
-            final Rect newRect = getViewRect(newIndex);
-            final Rect oldRect = getViewRect(oldIndex);
+            final Rect newRect = getItemRect(newIndex);
+            final Rect oldRect = getItemRect(oldIndex);
             mScaleAnimator = ValueAnimator.ofInt(newRect.width(), mItemLargeWidth);
             mScaleAnimator.setDuration(DURATION / 2);
             mScaleAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -621,31 +683,34 @@ public class CustomScrollView extends ViewGroup {
         mTranslationAnimator.start();
     }
 
-    /** Stop running animations on scrollview items */
+    /**
+     * Stop running animations on scrollview items
+     */
     private void stopAnimation() {
         if (mTranslationAnimator != null && mTranslationAnimator.isRunning()) {
             mTranslationAnimator.cancel();
         }
         if (mScaleAnimator != null && mScaleAnimator.isRunning()) {
-            mScaleAnimator.cancel();;
+            mScaleAnimator.cancel();
+            ;
         }
     }
 
-    /** Get the rect presents view's layout position and size */
-    private Rect getViewRect(int index) {
-        return mViewRectMap.get(getChildAt(index));
+    private void setViewRect(int pos, Rect rect) {
+        mViewsRect[pos] = rect;
     }
 
-    private void setViewRect(int index, Rect rect) {
-        mViewRectMap.put(getChildAt(index), rect);
-    }
-
-    /** Remove all child items  */
+    /**
+     * Remove all child items
+     */
     public void clearItems() {
-        if (getChildCount() > 0) {
+        if (getItemCount() > 0) {
             mItemLargeIndex = -1;
+            mViewsRect = null;
+            mViews = null;
+            mFirstActiveViewPos = -1;
+            mLastActiveViewPos = -1;
             removeAllViewsInLayout();
-            mViewRectMap.clear();
             invalidate();
         }
     }
@@ -654,23 +719,63 @@ public class CustomScrollView extends ViewGroup {
      * <p>Get scroll item count</p>
      */
     public int getItemCount() {
-        return getChildCount();
+        return mViews == null ? 0 : mViews.length;
     }
 
-    /** <p>Get item in specified position.</p> */
-    public View getItem(int pos) {
-        return getChildAt(pos);
+    /**
+     * <p>Get item in specified position.</p>
+     */
+    private View getItem(int pos) {
+        pos = Math.min(mAdapter.getCount() - 1, Math.max(0, pos));
+        View view = mViews[pos];
+        if (view == null) {
+            view = mAdapter.getView(this, pos);
+            addView(view);
+            if (pos > mLastActiveViewPos) {
+                mLastActiveViewPos = pos;
+                removeItem(mFirstActiveViewPos);
+                mFirstActiveViewPos += 1;
+                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstActiveViewPos, mLastActiveViewPos));
+            } else if (pos < mFirstActiveViewPos) {
+                mFirstActiveViewPos = pos;
+                removeItem(mLastActiveViewPos);
+                mLastActiveViewPos -= 1;
+                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstActiveViewPos, mLastActiveViewPos));
+            }
+            mViews[pos] = view;
+            Log.i(TAG, "create item at " + pos);
+            Log.printCallStack(2);
+        }
+        return view;
     }
 
-    /** <p>Reset item position,size and translationX. the result is the large item locates in
+    private void removeItem(int pos) {
+        View view = mViews[pos];
+        mViews[pos] = null;
+        removeViewInLayout(view);
+        Log.i(TAG, "remove item at " + pos);
+    }
+
+    /**
+     * Get the rect presents view's layout position and size
+     */
+    private Rect getItemRect(int pos) {
+        if (mViewsRect[pos] == null) {
+            mViewsRect[pos] = new Rect(0, 0, 0, 0);
+        }
+        return mViewsRect[pos];
+    }
+
+    /**
+     * <p>Reset item position,size and translationX. the result is the large item locates in
      * the center of ScrollView, items whose index small than large item locate in left
      * of large item, items whose index large than large item locate in right of large item </p>
      *
      * @param itemLargeIndex index of large item. if it large than "scroll item count" -1 or small
      *                       than 0, it will be limited to [0, "scroll item count" - 1].
-     * */
+     */
     private void initialize(int itemLargeIndex) {
-        mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getChildCount() - 1);
+        mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getItemCount() - 1);
         adjustTranslation(mItemLargeIndex);
         adjustItemSize(mItemLargeIndex);
 
@@ -681,21 +786,25 @@ public class CustomScrollView extends ViewGroup {
         mInitialized = true;
     }
 
-    /** Reset item position,size and translationX, the result is the large item locates in
-     * the center of ScrollView and other item locate in two side of the large item equally */
+    /**
+     * Reset item position,size and translationX, the result is the large item locates in
+     * the center of ScrollView and other item locate in two side of the large item equally
+     */
     private void initialize() {
-        if (getChildCount() > 0) {
-            int itemLargeIndex = getChildCount() / 2;
+        if (getItemCount() > 0) {
+            int itemLargeIndex = getItemCount() / 2;
             initialize(itemLargeIndex);
         }
     }
 
-    /** When the nth item is Large Item and center in screen,
-     * return the first item startX position */
+    /**
+     * When the nth item is Large Item and center in screen,
+     * return the first item startX position
+     */
     private int getTranslateX(int n) {
-        if (n < 0 || n > getChildCount() - 1) {
+        if (n < 0 || n > getItemCount() - 1) {
             throw new IllegalArgumentException(
-                    String.format("Invalid argument n: %d ,n must be in [0, %d]", n, getChildCount()-1));
+                    String.format("Invalid argument n: %d ,n must be in [0, %d]", n, getItemCount() - 1));
         }
         float startX = mWidth / 2.0f;
         startX -= (getLargeItemWM() / 2.0f);
@@ -711,21 +820,24 @@ public class CustomScrollView extends ViewGroup {
             return;
         }
 
-        int childCount = getChildCount();
-        for (int i = 0; i < childCount; ++i) {
-            View view = getChildAt(i);
-            Rect rect = mViewRectMap.get(view);
-            view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
+        if (mVisibleCount > 0) {
+            for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+                View view = getItem(i);
+                Rect rect = getItemRect(i);
+                view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
+            }
         }
     }
 
-    /** Get item width with left and right margin */
+    /**
+     * Get item width with left and right margin
+     */
     private int getItemWM() {
         return mItemWidth + mItemMargin * 2;
     }
 
     private int getLargeItemWM() {
-        return mItemLargeWidth +  mItemMargin * 2;
+        return mItemLargeWidth + mItemMargin * 2;
     }
 
     private void print(String msg, Rect rect) {
@@ -733,12 +845,14 @@ public class CustomScrollView extends ViewGroup {
                 rect.left, rect.right, rect.width(), rect.height()));
     }
 
-    /** Adjust all item size to standard size */
+    /**
+     * Adjust all item size to standard size
+     */
     private void adjustItemSize(int largeItemIndex) {
-        int n = getChildCount();
+        int n = getItemCount();
         for (int i = 0; i < n; ++i) {
             int itemLeft = i * getItemWM() + mItemMargin;
-            Rect rect = mViewRectMap.get(getChildAt(i));
+            Rect rect = getItemRect(i);
             if (i < largeItemIndex) {
                 rect.set(itemLeft, mHeight - mItemHeight, itemLeft + mItemWidth, mHeight);
             } else if (i > largeItemIndex) {
@@ -763,10 +877,12 @@ public class CustomScrollView extends ViewGroup {
     }
 
     @IntDef({SCROLL_SPEED_SLOW, SCROLL_SPEED_NORMAL, SCROLL_SPEED_FAST})
-    private @interface ScrollSpeed {}
+    private @interface ScrollSpeed {
+    }
 
     public interface Adapter {
         int getCount();
+
         View getView(CustomScrollView parent, int pos);
     }
 

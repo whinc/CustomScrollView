@@ -106,8 +106,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void printItemTags() {
         for (int i = 0; i < mCustomScrollView.getItemCount(); ++i) {
-            Integer tag = (Integer) mCustomScrollView.getItem(i).getTag();
-            Log.i(TAG, "Tag of view " + i + ":" + tag);
+//            Integer tag = (Integer) mCustomScrollView.getItem(i).getTag();
+//            Log.i(TAG, "Tag of view " + i + ":" + tag);
         }
     }
 
@@ -264,8 +264,8 @@ public class MainActivity extends AppCompatActivity {
             View view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
             ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
             imgView.setImageResource(mDrawableList[pos]);
-            Log.i(TAG, "pos:" + pos);
-            view.setTag(pos);
+//            Log.i(TAG, "pos:" + pos);
+//            view.setTag(pos);
             return view;
         }
     }

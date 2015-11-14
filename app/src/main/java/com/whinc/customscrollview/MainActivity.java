@@ -89,8 +89,18 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_print_large_item_index:
                 Log.i(TAG, "large item index:" + mCustomScrollView.getItemLargeIndex());
                 break;
+            case R.id.action_print_item_tag:
+                printItemTags();
+                break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void printItemTags() {
+        for (int i = 0; i < mCustomScrollView.getItemCount(); ++i) {
+            Integer tag = (Integer) mCustomScrollView.getItem(i).getTag();
+            Log.i(TAG, "Tag of view " + i + ":" + tag);
+        }
     }
 
     private void foldScrollView() {
@@ -233,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
             imgView.setImageResource(R.drawable.test_image);
             Log.i(TAG, "pos:" + pos);
             Log.i(TAG, "itemW:" + parent.getItemWidth() + ", itemH:" + parent.getItemHeight());
+            view.setTag(pos);
             return view;
         }
     }

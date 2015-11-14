@@ -24,13 +24,16 @@ import android.widget.TextView;
 
 import com.whinc.util.Log;
 
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Administrator on 2015/10/21.
  * Future work:
- * <p>* Don't store item view size in view's tag </p>
+ * <p style="text-decoration:line-through">* Disable log in debug mode </p>
+ * <p style="text-decoration:line-through">* Don't store item view size in view's tag </p>
  * <p>* Improve performance with view recycler</p>
- * <p>* getView() method of Adapter add a argument present current item index</p>
+ * <p style="text-decoration:line-through">* getView() method of Adapter add a argument present current item index</p>
  */
 public class CustomScrollView extends FrameLayout{
     public static final int SCROLL_SPEED_SLOW = 0;
@@ -83,6 +86,7 @@ public class CustomScrollView extends FrameLayout{
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     private boolean mInitialized = false;
+    private Map<View, Rect> mViewRectMap = new HashMap<>();
 
     public CustomScrollView(Context context) {
         super(context);
@@ -197,7 +201,7 @@ public class CustomScrollView extends FrameLayout{
             View view = adapter.getView(this, i);
             if (view != null) {
                 // Rect in view tag used to recode size and coordinate of view
-                view.setTag(new Rect(0, 0, 0, 0));
+                mViewRectMap.put(view, new Rect(0, 0, 0, 0));
                 addView(view);
             }
         }
@@ -321,7 +325,7 @@ public class CustomScrollView extends FrameLayout{
         // Measure children
         for (int i = 0; i < getChildCount(); ++i) {
             View child = getChildAt(i);
-            Rect rect = (Rect) child.getTag();
+            Rect rect = mViewRectMap.get(child);
             int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
             int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
             measureChild(child, widthSpec, heightSpec);
@@ -340,7 +344,7 @@ public class CustomScrollView extends FrameLayout{
         float ratio = Math.abs(distanceX / getItemWM());
         int childCount = getChildCount();
         View activeView = getChildAt(mItemLargeIndex);
-        Rect rect = (Rect) activeView.getTag();
+        Rect rect = mViewRectMap.get(activeView);
         int itemCenterX = mTranslationX + rect.left + rect.width()/2;
         int centerLine = mWidth / 2;
         if (itemCenterX < centerLine) {          // locate in left side of CustomScrollView
@@ -348,7 +352,7 @@ public class CustomScrollView extends FrameLayout{
                 if (distanceX > 0) {            // scroll left
                     // 中间item，左边固定，向左下方扩展
                     View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = (Rect) view1.getTag();
+                    Rect rect1 = mViewRectMap.get(view1);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right -= Math.round(deltaX);
@@ -357,7 +361,7 @@ public class CustomScrollView extends FrameLayout{
 
                     // 右侧item，右边固定，向左上方扩展
                     View view2 = getChildAt(mItemLargeIndex + 1);
-                    Rect rect2 = (Rect) view2.getTag();
+                    Rect rect2 = mViewRectMap.get(view2);
                     rect2.left -= Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
 //                    print("right", rect2);
@@ -377,7 +381,7 @@ public class CustomScrollView extends FrameLayout{
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，左边固定，向右上方扩展
                     View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = (Rect) view1.getTag();
+                    Rect rect1 = mViewRectMap.get(view1);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right += Math.round(deltaX);
@@ -386,7 +390,7 @@ public class CustomScrollView extends FrameLayout{
 
                     // 右侧item，右边固定，向右下方扩展
                     View view2 = getChildAt(mItemLargeIndex + 1);
-                    Rect rect2 = (Rect) view2.getTag();
+                    Rect rect2 = mViewRectMap.get(view2);
                     rect2.left += Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
 //                    print("right", rect2);
@@ -397,7 +401,7 @@ public class CustomScrollView extends FrameLayout{
                 if (distanceX > 0) {                // scroll left
                     // 中间item，右边固定，向左上方扩展
                     View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = (Rect) view1.getTag();
+                    Rect rect1 = mViewRectMap.get(view1);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left -= Math.round(deltaX);
@@ -407,14 +411,14 @@ public class CustomScrollView extends FrameLayout{
 
                     // 左侧item，左边固定，向左下方扩展
                     View view2 = getChildAt(mItemLargeIndex - 1);
-                    Rect rect2 = (Rect) view2.getTag();
+                    Rect rect2 = mViewRectMap.get(view2);
                     rect2.right -= Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
 //                    print("left", rect2);
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，右边固定，向右下方扩展
                     View view1 = getChildAt(mItemLargeIndex);
-                    Rect rect1 = (Rect) view1.getTag();
+                    Rect rect1 = mViewRectMap.get(view1);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left += Math.round(deltaX);
@@ -424,7 +428,7 @@ public class CustomScrollView extends FrameLayout{
 
                     // 左侧item，左边固定，向右上方扩展
                     View view2 = getChildAt(mItemLargeIndex - 1);
-                    Rect rect2 = (Rect) view2.getTag();
+                    Rect rect2 = mViewRectMap.get(view2);
                     rect2.right += Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
 //                    print("left", rect2);
@@ -536,16 +540,16 @@ public class CustomScrollView extends FrameLayout{
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
         int oldIndex = mItemLargeIndex, newIndex = oldIndex;
-        Rect centerRect = (Rect)getChildAt(mItemLargeIndex).getTag();
+        Rect centerRect = mViewRectMap.get(getChildAt(mItemLargeIndex));
         if (mItemLargeIndex > 0) {
-            Rect leftRect = (Rect)getChildAt(mItemLargeIndex - 1).getTag();
+            Rect leftRect = mViewRectMap.get(getChildAt(mItemLargeIndex - 1));
             if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && leftRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex - 1;
             }
         }
         if (mItemLargeIndex < getChildCount() - 1) {
-            Rect rightRect = (Rect)getChildAt(mItemLargeIndex + 1).getTag();
+            Rect rightRect = mViewRectMap.get(getChildAt(mItemLargeIndex + 1));
             if (centerRect.width() < (mItemLargeWidth - mScrollItemLeastDistance)
                     && rightRect.width() > mItemWidth) {
                 newIndex = mItemLargeIndex + 1;
@@ -629,11 +633,11 @@ public class CustomScrollView extends FrameLayout{
 
     /** Get the rect presents view's layout position and size */
     private Rect getViewRect(int index) {
-        return (Rect) getChildAt(index).getTag();
+        return mViewRectMap.get(getChildAt(index));
     }
 
     private void setViewRect(int index, Rect rect) {
-        getChildAt(index).setTag(rect);
+        mViewRectMap.put(getChildAt(index), rect);
     }
 
     /** Remove all child items  */
@@ -641,8 +645,21 @@ public class CustomScrollView extends FrameLayout{
         if (getChildCount() > 0) {
             mItemLargeIndex = -1;
             removeAllViewsInLayout();
+            mViewRectMap.clear();
             invalidate();
         }
+    }
+
+    /**
+     * <p>Get scroll item count</p>
+     */
+    public int getItemCount() {
+        return getChildCount();
+    }
+
+    /** <p>Get item in specified position.</p> */
+    public View getItem(int pos) {
+        return getChildAt(pos);
     }
 
     /** <p>Reset item position,size and translationX. the result is the large item locates in
@@ -699,7 +716,7 @@ public class CustomScrollView extends FrameLayout{
         int childCount = getChildCount();
         for (int i = 0; i < childCount; ++i) {
             View view = getChildAt(i);
-            Rect rect = (Rect) view.getTag();
+            Rect rect = mViewRectMap.get(view);
             view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
         }
     }
@@ -723,7 +740,7 @@ public class CustomScrollView extends FrameLayout{
         int n = getChildCount();
         for (int i = 0; i < n; ++i) {
             int itemLeft = i * getItemWM() + mItemMargin;
-            Rect rect = (Rect) getChildAt(i).getTag();
+            Rect rect = mViewRectMap.get(getChildAt(i));
             if (i < largeItemIndex) {
                 rect.set(itemLeft, mHeight - mItemHeight, itemLeft + mItemWidth, mHeight);
             } else if (i > largeItemIndex) {

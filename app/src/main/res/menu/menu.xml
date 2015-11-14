@@ -13,4 +13,8 @@
           android:title="print large item index"
           app:showAsAction="ifRoom"
         />
+    <item android:id="@+id/action_print_item_tag"
+          android:title="print item tag"
+          app:showAsAction="ifRoom"
+        />
 </menu>

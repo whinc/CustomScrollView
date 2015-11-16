@@ -257,13 +257,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(CustomScrollView parent, int pos) {
+        public View getView(int pos, View convertView, ViewGroup parent) {
             if (pos >= mDrawableList.length) {
                 throw new IndexOutOfBoundsException("size:" + mDrawableList.length + ", index:" + pos);
             }
-            View view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
-            ImageView imgView = (ImageView)view.findViewById(R.id.imageView);
-            imgView.setImageResource(mDrawableList[pos]);
+            View view = convertView;
+            if (view == null) {
+                view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
+                ImageView imgView = (ImageView) view.findViewById(R.id.imageView);
+                imgView.setImageResource(mDrawableList[pos]);
+                Log.i(TAG, "create a new View");
+            } else {
+                Log.i(TAG, "return convert View");
+            }
 //            Log.i(TAG, "pos:" + pos);
 //            view.setTag(pos);
             return view;

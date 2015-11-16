@@ -25,6 +25,9 @@ import android.widget.TextView;
 
 import com.whinc.util.Log;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Created by Administrator on 2015/10/21.
  * Future work:
@@ -111,9 +114,9 @@ public class CustomScrollView extends ViewGroup {
     //    private Map<View, Rect> mViewsRect = new HashMap<>();
     private View[] mViews = null;
     private Rect[] mViewsRect = null;
-    private int mFirstActiveViewPos = -1;
-    private int mLastActiveViewPos = -1;
-    private int mVisibleCount;
+    private int mFirstVisibleItemPos = -1;
+    private int mLastVisibleItemPos = -1;
+    private List<View> mRecyclerViews = new LinkedList<>();
 
     public CustomScrollView(Context context) {
         super(context);
@@ -235,21 +238,20 @@ public class CustomScrollView extends ViewGroup {
         DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
         int screenWidth = dm.widthPixels;
         screenWidth -= getLargeItemWM();
-        mVisibleCount = 1;
+        int visibleCount = 1;
         while (screenWidth > 0) {
-            mVisibleCount += 1;
+            visibleCount += 1;
             screenWidth -= getItemWM();
         }
-        mVisibleCount += 1;     // +1
-        if (mVisibleCount < count) {
-            mFirstActiveViewPos = count / 2 - mVisibleCount / 2;
-            mLastActiveViewPos = mFirstActiveViewPos + mVisibleCount - 1;
+        if (visibleCount < count) {
+            mFirstVisibleItemPos = count / 2 - visibleCount / 2;
+            mLastVisibleItemPos = mFirstVisibleItemPos + visibleCount - 1;
         } else {
-            mFirstActiveViewPos = 0;
-            mLastActiveViewPos = mFirstActiveViewPos + count - 1;
+            mFirstVisibleItemPos = 0;
+            mLastVisibleItemPos = mFirstVisibleItemPos + count - 1;
         }
-        Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d]", count, mVisibleCount, mFirstActiveViewPos, mLastActiveViewPos));
-        for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+        Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d]", count, visibleCount, mFirstVisibleItemPos, mLastVisibleItemPos));
+        for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
             getItem(i);
         }
 
@@ -377,8 +379,8 @@ public class CustomScrollView extends ViewGroup {
         }
 
         // Measure children
-        if (mVisibleCount > 0) {
-            for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+        if (getVisibleItemCount() > 0) {
+            for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
                 View child = getItem(i);
                 Rect rect = getItemRect(i);
                 int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
@@ -708,8 +710,8 @@ public class CustomScrollView extends ViewGroup {
             mItemLargeIndex = -1;
             mViewsRect = null;
             mViews = null;
-            mFirstActiveViewPos = -1;
-            mLastActiveViewPos = -1;
+            mFirstVisibleItemPos = -1;
+            mLastVisibleItemPos = -1;
             removeAllViewsInLayout();
             invalidate();
         }
@@ -722,38 +724,61 @@ public class CustomScrollView extends ViewGroup {
         return mViews == null ? 0 : mViews.length;
     }
 
+    public int getVisibleItemCount() {
+        return mLastVisibleItemPos - mFirstVisibleItemPos + 1;
+    }
+
     /**
-     * <p>Get item in specified position.</p>
+     * <p>Get item in specified position. Create and return a new item if the item doesn't exist.</p>
      */
     private View getItem(int pos) {
         pos = Math.min(mAdapter.getCount() - 1, Math.max(0, pos));
         View view = mViews[pos];
         if (view == null) {
-            view = mAdapter.getView(this, pos);
+            view = createItem(pos);
             addView(view);
-            if (pos > mLastActiveViewPos) {
-                mLastActiveViewPos = pos;
-                removeItem(mFirstActiveViewPos);
-                mFirstActiveViewPos += 1;
-                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstActiveViewPos, mLastActiveViewPos));
-            } else if (pos < mFirstActiveViewPos) {
-                mFirstActiveViewPos = pos;
-                removeItem(mLastActiveViewPos);
-                mLastActiveViewPos -= 1;
-                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstActiveViewPos, mLastActiveViewPos));
+            if (pos > mLastVisibleItemPos) {
+                mLastVisibleItemPos = pos;
+                removeItem(mFirstVisibleItemPos);
+                mFirstVisibleItemPos += 1;
+                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstVisibleItemPos, mLastVisibleItemPos));
+            } else if (pos < mFirstVisibleItemPos) {
+                mFirstVisibleItemPos = pos;
+                removeItem(mLastVisibleItemPos);
+                mLastVisibleItemPos -= 1;
+                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstVisibleItemPos, mLastVisibleItemPos));
             }
             mViews[pos] = view;
-            Log.i(TAG, "create item at " + pos);
             Log.printCallStack(2);
         }
         return view;
     }
 
+    /** <p>Get visible item in specified position. Return null if the item doesn't exist</p> */
+    public View getVisibleItem(int pos) {
+        pos = Math.min(mAdapter.getCount() - 1, Math.max(0, pos));
+        View view = mViews[pos];
+        return view;
+    }
+
     private void removeItem(int pos) {
         View view = mViews[pos];
-        mViews[pos] = null;
+        mRecyclerViews.add(view);
         removeViewInLayout(view);
+        mViews[pos] = null;
         Log.i(TAG, "remove item at " + pos);
+    }
+
+    private View createItem(int pos) {
+        View convertView = null;
+        if (!mRecyclerViews.isEmpty()) {
+            convertView = mRecyclerViews.remove(0);
+            Log.i(TAG, "create a item at " + pos + " with recycler view");
+        } else {
+            Log.i(TAG, "create a new item at " + pos);
+        }
+        View view = mAdapter.getView(pos, convertView, this);
+        return view;
     }
 
     /**
@@ -820,8 +845,8 @@ public class CustomScrollView extends ViewGroup {
             return;
         }
 
-        if (mVisibleCount > 0) {
-            for (int i = mFirstActiveViewPos; i <= mLastActiveViewPos; ++i) {
+        if (getVisibleItemCount() > 0) {
+            for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
                 View view = getItem(i);
                 Rect rect = getItemRect(i);
                 view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
@@ -883,7 +908,7 @@ public class CustomScrollView extends ViewGroup {
     public interface Adapter {
         int getCount();
 
-        View getView(CustomScrollView parent, int pos);
+        View getView(int position, View convertView, ViewGroup parent);
     }
 
     public interface OnItemChangedListener {

@@ -1,5 +1,6 @@
 package com.whinc.customscrollview;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -11,6 +12,11 @@ import android.widget.ImageView;
 import com.whinc.widget.CustomScrollView;
 
 public class SecondActivity extends ActionBarActivity {
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

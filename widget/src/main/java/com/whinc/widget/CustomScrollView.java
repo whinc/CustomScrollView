@@ -12,7 +12,6 @@ import android.os.Build;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -35,6 +34,7 @@ import java.util.List;
  * <p style="text-decoration:line-through">* Don't store item view size in view's tag </p>
  * <p>* Improve performance with view recycler</p>
  * <p style="text-decoration:line-through">* getView() method of Adapter add a argument present current item index</p>
+ * <p>* improve performance of updateVisibleRange() method avoid finding visible items range from start to end</p>
  */
 public class CustomScrollView extends ViewGroup {
     public static final int SCROLL_SPEED_SLOW = 0;
@@ -71,12 +71,12 @@ public class CustomScrollView extends ViewGroup {
      * Width of item in ScrollView
      */
     private int mItemWidth;
-
-    /* XML layout attributes */
     /**
      * Height of item in ScrollView
      */
     private int mItemHeight;
+
+    /* XML layout attributes */
     /**
      * Spacing between each item in ScrollView
      */
@@ -111,11 +111,16 @@ public class CustomScrollView extends ViewGroup {
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     private boolean mInitialized = false;
-    //    private Map<View, Rect> mViewsRect = new HashMap<>();
+    /**
+     * recode view reference
+     */
     private View[] mViews = null;
+    /**
+     * record view position and size
+     */
     private Rect[] mViewsRect = null;
-    private int mFirstVisibleItemPos = -1;
-    private int mLastVisibleItemPos = -1;
+    private int mVisibleItemStart = -1;
+    private int mVisibleItemEnd = -1;
     private List<View> mRecyclerViews = new LinkedList<>();
 
     public CustomScrollView(Context context) {
@@ -137,6 +142,12 @@ public class CustomScrollView extends ViewGroup {
     public CustomScrollView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        updateVisibleItemRange();
     }
 
     public int getItemWidth() {
@@ -235,23 +246,16 @@ public class CustomScrollView extends ViewGroup {
         mViews = new View[count];
         mViewsRect = new Rect[count];
 
-        DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
-        int screenWidth = dm.widthPixels;
-        screenWidth -= getLargeItemWM();
-        int visibleCount = 1;
-        while (screenWidth > 0) {
-            visibleCount += 1;
-            screenWidth -= getItemWM();
-        }
+        int visibleCount = getMaxVisibleItemCount();
         if (visibleCount < count) {
-            mFirstVisibleItemPos = count / 2 - visibleCount / 2;
-            mLastVisibleItemPos = mFirstVisibleItemPos + visibleCount - 1;
+            mVisibleItemStart = count / 2 - visibleCount / 2;
+            mVisibleItemEnd = mVisibleItemStart + visibleCount;
         } else {
-            mFirstVisibleItemPos = 0;
-            mLastVisibleItemPos = mFirstVisibleItemPos + count - 1;
+            mVisibleItemStart = 0;
+            mVisibleItemEnd = mVisibleItemStart + count;
         }
-        Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d]", count, visibleCount, mFirstVisibleItemPos, mLastVisibleItemPos));
-        for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
+        Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d)", count, visibleCount, mVisibleItemStart, mVisibleItemEnd));
+        for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
             getItem(i);
         }
 
@@ -260,6 +264,21 @@ public class CustomScrollView extends ViewGroup {
         if (isShown()) {
             initialize();
         }
+    }
+
+    /**
+     * <p>Get max visible item count</p>
+     * @return
+     */
+    private int getMaxVisibleItemCount() {
+        int width = mWidth;
+        int visibleCount = 1;
+        width -= getLargeItemWM();
+        while (width > 0) {
+            visibleCount += 1;
+            width -= getItemWM();
+        }
+        return visibleCount;
     }
 
     /**
@@ -307,7 +326,7 @@ public class CustomScrollView extends ViewGroup {
      */
     public void scrollBy(int itemCount) {
         if (isScrolling()) {
-            log("Is scrolling");
+            Log.i(TAG, "Is scrolling");
             return;
         }
         mIsScrolling = true;
@@ -331,7 +350,7 @@ public class CustomScrollView extends ViewGroup {
             default:
                 break;
         }
-        log(String.format("Start scrolling, cur index:%d, dest index:%d, speed:%d, delay:%d",
+        Log.i(TAG, String.format("Start scrolling, cur index:%d, dest index:%d, speed:%d, delay:%d",
                 mItemLargeIndex, mDestItemLargeIndex, scrollDistanceX, scrollDelay));
 
         scrollBy(itemCount, mDestItemLargeIndex, scrollDistanceX, scrollDelay);
@@ -351,7 +370,7 @@ public class CustomScrollView extends ViewGroup {
         getHandler().removeCallbacks(mScrollRunnable);
         mScrollRunnable = null;
         mIsScrolling = false;
-        log("stop scroll");
+        Log.i(TAG, "stop scroll");
     }
 
     @Override
@@ -368,7 +387,6 @@ public class CustomScrollView extends ViewGroup {
             if (mInitialized) {
                 adjustTranslation(mItemLargeIndex);
             }
-            Log.i(TAG, "new Width:" + mWidth);
         }
         if (mHeight != getMeasuredHeight()) {
             mHeight = getMeasuredHeight();
@@ -380,7 +398,7 @@ public class CustomScrollView extends ViewGroup {
 
         // Measure children
         if (getVisibleItemCount() > 0) {
-            for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
+            for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
                 View child = getItem(i);
                 Rect rect = getItemRect(i);
                 int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
@@ -401,29 +419,23 @@ public class CustomScrollView extends ViewGroup {
         distanceX *= mScrollFactor;
         mTranslationX -= distanceX;
         float ratio = Math.abs(distanceX / getItemWM());
-        int childCount = getItemCount();
-        View activeView = getItem(mItemLargeIndex);
         Rect rect = getItemRect(mItemLargeIndex);
         int itemCenterX = mTranslationX + rect.left + rect.width() / 2;
         int centerLine = mWidth / 2;
         if (itemCenterX < centerLine) {          // locate in left side of CustomScrollView
-            if (mItemLargeIndex < childCount - 1) {
+            if (mItemLargeIndex < getItemCount() - 1) {
                 if (distanceX > 0) {            // scroll left
                     // 中间item，左边固定，向左下方扩展
-                    View view1 = getItem(mItemLargeIndex);
                     Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right -= Math.round(deltaX);
                     rect1.top += Math.round(deltaY);
-//                    print("center", rect1);
 
                     // 右侧item，右边固定，向左上方扩展
-                    View view2 = getItem(mItemLargeIndex + 1);
                     Rect rect2 = getItemRect(mItemLargeIndex + 1);
                     rect2.left -= Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
-//                    print("right", rect2);
 
                     // 向左滑动一个Item后更新当前Large item指向
                     if (rect2.width() >= mItemLargeWidth ||
@@ -439,58 +451,44 @@ public class CustomScrollView extends ViewGroup {
                     }
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，左边固定，向右上方扩展
-                    View view1 = getItem(mItemLargeIndex);
                     Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.right += Math.round(deltaX);
                     rect1.top -= Math.round(deltaY);
-//                    print("center", rect1);
 
                     // 右侧item，右边固定，向右下方扩展
-                    View view2 = getItem(mItemLargeIndex + 1);
                     Rect rect2 = getItemRect(mItemLargeIndex + 1);
                     rect2.left += Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
-//                    print("right", rect2);
                 }
             }
         } else if (itemCenterX > centerLine) {      // locate in right side of CustomScrollView
             if (mItemLargeIndex > 0) {
                 if (distanceX > 0) {                // scroll left
                     // 中间item，右边固定，向左上方扩展
-                    View view1 = getItem(mItemLargeIndex);
                     Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left -= Math.round(deltaX);
                     rect1.top -= Math.round(deltaY);
-//                        Log.i(TAG, String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
-//                    print("center", rect1);
 
                     // 左侧item，左边固定，向左下方扩展
-                    View view2 = getItem(mItemLargeIndex - 1);
                     Rect rect2 = getItemRect(mItemLargeIndex - 1);
                     rect2.right -= Math.round(deltaX);
                     rect2.top += Math.round(deltaY);
-//                    print("left", rect2);
                 } else if (distanceX < 0) {     // scroll right
                     // 中间item，右边固定，向右下方扩展
-                    View view1 = getItem(mItemLargeIndex);
                     Rect rect1 = getItemRect(mItemLargeIndex);
                     float deltaX = (mItemLargeWidth - mItemWidth) * ratio;
                     float deltaY = getItemWHRatio() * deltaX;
                     rect1.left += Math.round(deltaX);
                     rect1.top += Math.round(deltaY);
-//                    log(String.format("deltaX=%d, deltaY=%d", Math.round(deltaX), Math.round(deltaY)));
-//                    print("center", rect1);
 
                     // 左侧item，左边固定，向右上方扩展
-                    View view2 = getItem(mItemLargeIndex - 1);
                     Rect rect2 = getItemRect(mItemLargeIndex - 1);
                     rect2.right += Math.round(deltaX);
                     rect2.top -= Math.round(deltaY);
-//                    print("left", rect2);
 
                     if (rect2.width() >= mItemLargeWidth ||
                             rect2.height() >= mItemLargeHeight) {
@@ -506,8 +504,25 @@ public class CustomScrollView extends ViewGroup {
                 }
             }
         }
+        updateVisibleItemRange();
         requestLayout();
         return true;
+    }
+
+
+    private boolean isItemVisible(int pos) {
+        Rect rect = mViewsRect[pos];
+        int screenWidth = mContext.getResources().getDisplayMetrics().widthPixels;
+        boolean r = (rect != null
+                && (rect.right + mTranslationX) >= 0
+                && (rect.left + mTranslationX) <= screenWidth);
+        Log.i(TAG, String.format("Item at %d left:%d right:%d %s",
+                pos,
+                rect.left + mTranslationX,
+                rect.right + mTranslationX,
+                (r ? "visible" : "invisible")
+        ));
+        return r;
     }
 
     private float getItemWHRatio() {
@@ -561,8 +576,8 @@ public class CustomScrollView extends ViewGroup {
             mScrollItemLeastDistance = typedArray.getDimensionPixelSize(R.styleable.CustomScrollView_cs_scroll_item_least_distance, DEFAULT_TOUCH_DIFF);
             mScrollItemLeastDistance = Math.min(mScrollItemLeastDistance, mItemLargeWidth - mItemWidth);
             mScrollSpeed = typedArray.getInteger(R.styleable.CustomScrollView_cs_scroll_speed, SCROLL_SPEED_NORMAL);
-            log("item width:" + mItemWidth + " px");
-            log("touch diff:" + mScrollItemLeastDistance + " px");
+            Log.i(TAG, "item width:" + mItemWidth + " px");
+            Log.i(TAG, "touch diff:" + mScrollItemLeastDistance + " px");
             typedArray.recycle();
         }
 
@@ -571,7 +586,7 @@ public class CustomScrollView extends ViewGroup {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 if (getItemCount() <= 0) {
-                    log("Has no child view!");
+                    Log.i(TAG, "Has no child view!");
                     return true;
                 } else {
                     return CustomScrollView.this.onScroll(e1, e2, distanceX, distanceY);
@@ -603,7 +618,8 @@ public class CustomScrollView extends ViewGroup {
         }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
-        int oldIndex = mItemLargeIndex, newIndex = oldIndex;
+        int oldIndex = mItemLargeIndex;
+        int newIndex = oldIndex;
         Rect centerRect = mViewsRect[mItemLargeIndex];
         if (mItemLargeIndex > 0) {
             Rect leftRect = mViewsRect[mItemLargeIndex - 1];
@@ -663,7 +679,7 @@ public class CustomScrollView extends ViewGroup {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
-                    adjustItemSize(mItemLargeIndex);
+//                    adjustItemSize(mItemLargeIndex);
                 }
             });
             mScaleAnimator.start();
@@ -680,6 +696,14 @@ public class CustomScrollView extends ViewGroup {
             public void onAnimationUpdate(ValueAnimator animation) {
                 mTranslationX = (Integer) animation.getAnimatedValue();
                 requestLayout();
+            }
+        });
+        mTranslationAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                adjustItemSize(mItemLargeIndex);
+                updateVisibleItemRange();
             }
         });
         mTranslationAnimator.start();
@@ -710,63 +734,94 @@ public class CustomScrollView extends ViewGroup {
             mItemLargeIndex = -1;
             mViewsRect = null;
             mViews = null;
-            mFirstVisibleItemPos = -1;
-            mLastVisibleItemPos = -1;
+            mVisibleItemStart = -1;
+            mVisibleItemEnd = -1;
             removeAllViewsInLayout();
             invalidate();
         }
     }
 
     /**
-     * <p>Get scroll item count</p>
+     * <p>Get total count of item in scrollview </p>
      */
     public int getItemCount() {
         return mViews == null ? 0 : mViews.length;
     }
 
     public int getVisibleItemCount() {
-        return mLastVisibleItemPos - mFirstVisibleItemPos + 1;
+        return mVisibleItemEnd - mVisibleItemStart;
     }
 
     /**
      * <p>Get item in specified position. Create and return a new item if the item doesn't exist.</p>
      */
     private View getItem(int pos) {
-        pos = Math.min(mAdapter.getCount() - 1, Math.max(0, pos));
         View view = mViews[pos];
         if (view == null) {
             view = createItem(pos);
             addView(view);
-            if (pos > mLastVisibleItemPos) {
-                mLastVisibleItemPos = pos;
-                removeItem(mFirstVisibleItemPos);
-                mFirstVisibleItemPos += 1;
-                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstVisibleItemPos, mLastVisibleItemPos));
-            } else if (pos < mFirstVisibleItemPos) {
-                mFirstVisibleItemPos = pos;
-                removeItem(mLastVisibleItemPos);
-                mLastVisibleItemPos -= 1;
-                Log.i(TAG, String.format("active item range:[%d, %d]", mFirstVisibleItemPos, mLastVisibleItemPos));
-            }
             mViews[pos] = view;
-            Log.printCallStack(2);
         }
         return view;
     }
 
-    /** <p>Get visible item in specified position. Return null if the item doesn't exist</p> */
+    /**
+     * <p>Get visible item in specified position. Return null if the item doesn't exist</p>
+     */
     public View getVisibleItem(int pos) {
-        pos = Math.min(mAdapter.getCount() - 1, Math.max(0, pos));
-        View view = mViews[pos];
-        return view;
+        if (pos < 0 || pos >= getItemCount()) {
+            throw new IndexOutOfBoundsException(
+                    String.format("valid range:[%d, %d], pos:%d", 0, getItemCount() - 1, pos));
+        }
+        return mViews[pos];
     }
 
     private void removeItem(int pos) {
         View view = mViews[pos];
-        mRecyclerViews.add(view);
-        removeViewInLayout(view);
-        mViews[pos] = null;
-        Log.i(TAG, "remove item at " + pos);
+        if (view != null) {
+            mRecyclerViews.add(view);
+            removeViewInLayout(view);
+            mViews[pos] = null;
+            Log.i(TAG, "remove item at " + pos, 2);
+        }
+    }
+
+    private void updateVisibleItemRange() {
+
+        // Find first visible item pos and remove previous invisible item
+        int k = 0;
+        while (k < getItemCount()) {
+            if (isItemVisible(k)) {
+                getItem(k);
+                break;
+            } else {
+                removeItem(k);
+                ++k;
+            }
+        }
+        mVisibleItemStart = k;
+
+        // Find last visible item start from first visible item
+        k = mVisibleItemStart + 1;
+        while (k < getItemCount()) {
+            if (isItemVisible(k)) {
+                getItem(k);
+                ++k;
+            } else {
+                break;
+            }
+        }
+        mVisibleItemEnd = k;
+
+        // Remove invisible items after last visible item
+        k = mVisibleItemEnd;
+        while (k < getItemCount()) {
+            removeItem(k);
+            ++k;
+        }
+
+        Log.i(TAG, String.format("visible range:[%d, %d), large item pos:%d",
+                mVisibleItemStart, mVisibleItemEnd, mItemLargeIndex));
     }
 
     private View createItem(int pos) {
@@ -846,7 +901,7 @@ public class CustomScrollView extends ViewGroup {
         }
 
         if (getVisibleItemCount() > 0) {
-            for (int i = mFirstVisibleItemPos; i <= mLastVisibleItemPos; ++i) {
+            for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
                 View view = getItem(i);
                 Rect rect = getItemRect(i);
                 view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
@@ -863,11 +918,6 @@ public class CustomScrollView extends ViewGroup {
 
     private int getLargeItemWM() {
         return mItemLargeWidth + mItemMargin * 2;
-    }
-
-    private void print(String msg, Rect rect) {
-        log(String.format("%s, l=%d, r=%d, w=%d, h=%d", msg,
-                rect.left, rect.right, rect.width(), rect.height()));
     }
 
     /**
@@ -892,12 +942,6 @@ public class CustomScrollView extends ViewGroup {
     private void adjustTranslation(int itemLargeIndex) {
         if (itemLargeIndex >= 0) {
             mTranslationX = getTranslateX(itemLargeIndex);
-        }
-    }
-
-    private void log(String msg) {
-        if (DEBUG) {
-            Log.i(TAG, msg);
         }
     }
 

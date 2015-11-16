@@ -50,11 +50,11 @@ public class MainActivity extends AppCompatActivity {
                         view.post(new Runnable() {
                             @Override
                             public void run() {
-                                view.scrollTo(view.getChildCount() - 1);
+                                view.scrollTo(view.getItemCount() - 1);
                             }
                         });
                     }
-                    if (cur == view.getChildCount() - 1) {
+                    if (cur == view.getItemCount() - 1) {
                         view.post(new Runnable() {
                             @Override
                             public void run() {

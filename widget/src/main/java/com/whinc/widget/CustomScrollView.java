@@ -32,9 +32,9 @@ import java.util.List;
  * Future work:
  * <p style="text-decoration:line-through">* Disable log in debug mode </p>
  * <p style="text-decoration:line-through">* Don't store item view size in view's tag </p>
- * <p>* Improve performance with view recycler</p>
+ * <p style="text-decoration:line-through">* Improve performance with view recycler</p>
  * <p style="text-decoration:line-through">* getView() method of Adapter add a argument present current item index</p>
- * <p>* improve performance of updateVisibleRange() method avoid finding visible items range from start to end</p>
+ * <p style="text-decoration:line-through">* improve performance of updateVisibleRange() method avoid finding visible items range from start to end</p>
  */
 public class CustomScrollView extends ViewGroup {
     public static final int SCROLL_SPEED_SLOW = 0;
@@ -122,12 +122,10 @@ public class CustomScrollView extends ViewGroup {
     private int mVisibleItemStart = -1;
     private int mVisibleItemEnd = -1;
     private List<View> mRecyclerViews = new LinkedList<>();
-
     public CustomScrollView(Context context) {
         super(context);
         init(context, null);
     }
-
     public CustomScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
@@ -144,10 +142,28 @@ public class CustomScrollView extends ViewGroup {
         init(context, attrs);
     }
 
+    /**
+     * <p>Get first visible item position</p>
+     * @return
+     */
+    public int getVisibleItemStart() {
+        return mVisibleItemStart;
+    }
+
+    /**
+     * <p>Get the next position of last visible item</p>
+     * @return
+     */
+    public int getVisibleItemEnd() {
+        return mVisibleItemEnd;
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        updateVisibleItemRange();
+        if (getVisibleItemCount() > 0) {
+            updateVisibleItemRange();
+        }
     }
 
     public int getItemWidth() {
@@ -256,7 +272,7 @@ public class CustomScrollView extends ViewGroup {
         }
         Log.i(TAG, String.format("count:%d, visible count:%d, active range:[%d, %d)", count, visibleCount, mVisibleItemStart, mVisibleItemEnd));
         for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
-            getItem(i);
+            createItem(i);
         }
 
         // If setAdapter() is called before scroll view can show call initialize() on time in onMeasure() of
@@ -268,6 +284,7 @@ public class CustomScrollView extends ViewGroup {
 
     /**
      * <p>Get max visible item count</p>
+     *
      * @return
      */
     private int getMaxVisibleItemCount() {
@@ -399,7 +416,7 @@ public class CustomScrollView extends ViewGroup {
         // Measure children
         if (getVisibleItemCount() > 0) {
             for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
-                View child = getItem(i);
+                View child = createItem(i);
                 Rect rect = getItemRect(i);
                 int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
                 int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
@@ -446,7 +463,14 @@ public class CustomScrollView extends ViewGroup {
                         adjustItemSize(mItemLargeIndex);
 
                         if (mItemChangedListener != null) {
-                            mItemChangedListener.onChanged(this, mItemLargeIndex - 1, mItemLargeIndex);
+                            final int prev = mItemLargeIndex - 1;
+                            final int cur = mItemLargeIndex;
+                            post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mItemChangedListener.onChanged(CustomScrollView.this, prev, cur);
+                                }
+                            });
                         }
                     }
                 } else if (distanceX < 0) {     // scroll right
@@ -498,7 +522,14 @@ public class CustomScrollView extends ViewGroup {
                         adjustItemSize(mItemLargeIndex);
 
                         if (mItemChangedListener != null) {
-                            mItemChangedListener.onChanged(this, mItemLargeIndex + 1, mItemLargeIndex);
+                            final int prev = mItemLargeIndex + 1;
+                            final int cur = mItemLargeIndex;
+                            post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mItemChangedListener.onChanged(CustomScrollView.this, prev, cur);
+                                }
+                            });
                         }
                     }
                 }
@@ -618,8 +649,8 @@ public class CustomScrollView extends ViewGroup {
         }
 
         // 手指离开屏幕时，将当前最大的Item设置为中心Item
-        int oldIndex = mItemLargeIndex;
-        int newIndex = oldIndex;
+        final int oldIndex = mItemLargeIndex;
+        int newIndex = mItemLargeIndex;
         Rect centerRect = mViewsRect[mItemLargeIndex];
         if (mItemLargeIndex > 0) {
             Rect leftRect = mViewsRect[mItemLargeIndex - 1];
@@ -635,12 +666,8 @@ public class CustomScrollView extends ViewGroup {
                 newIndex = mItemLargeIndex + 1;
             }
         }
-        if (mItemChangedListener != null && mItemLargeIndex != newIndex) {
-            mItemChangedListener.onChanged(this, mItemLargeIndex, newIndex);
-        }
         mItemLargeIndex = newIndex;
 
-//        log("item large index:" + newIndex);
         final int scrollDirection = (newIndex - oldIndex);
         if (scrollDirection == 0) {
             adjustItemSize(newIndex);
@@ -679,7 +706,6 @@ public class CustomScrollView extends ViewGroup {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
-//                    adjustItemSize(mItemLargeIndex);
                 }
             });
             mScaleAnimator.start();
@@ -704,6 +730,12 @@ public class CustomScrollView extends ViewGroup {
                 super.onAnimationEnd(animation);
                 adjustItemSize(mItemLargeIndex);
                 updateVisibleItemRange();
+
+                if (mItemChangedListener != null && mItemLargeIndex != oldIndex) {
+                    final int prev = oldIndex;
+                    final int cur = mItemLargeIndex;
+                    mItemChangedListener.onChanged(CustomScrollView.this, prev, cur);
+                }
             }
         });
         mTranslationAnimator.start();
@@ -755,10 +787,17 @@ public class CustomScrollView extends ViewGroup {
     /**
      * <p>Get item in specified position. Create and return a new item if the item doesn't exist.</p>
      */
-    private View getItem(int pos) {
+    private View createItem(int pos) {
         View view = mViews[pos];
         if (view == null) {
-            view = createItem(pos);
+            View convertView = null;
+            if (!mRecyclerViews.isEmpty()) {
+                convertView = mRecyclerViews.remove(0);
+                Log.i(TAG, "reuse item at " + pos);
+            } else {
+                Log.i(TAG, "create a new item at " + pos);
+            }
+            view = mAdapter.getView(pos, convertView, this);
             addView(view);
             mViews[pos] = view;
         }
@@ -768,10 +807,10 @@ public class CustomScrollView extends ViewGroup {
     /**
      * <p>Get visible item in specified position. Return null if the item doesn't exist</p>
      */
-    public View getVisibleItem(int pos) {
+    public View getItem(int pos) {
         if (pos < 0 || pos >= getItemCount()) {
             throw new IndexOutOfBoundsException(
-                    String.format("valid range:[%d, %d], pos:%d", 0, getItemCount() - 1, pos));
+                    String.format("valid range:[%d, %d], but index:%d", 0, getItemCount() - 1, pos));
         }
         return mViews[pos];
     }
@@ -788,11 +827,16 @@ public class CustomScrollView extends ViewGroup {
 
     private void updateVisibleItemRange() {
 
+        // reduce update range to improve the search performance
+        int rangeStart = Math.max(0, mItemLargeIndex - (getMaxVisibleItemCount() / 2 + 1));
+        int rangeEnd = Math.min(getItemCount(), mItemLargeIndex + (getMaxVisibleItemCount() / 2 + 1) + 1);
+        Log.i(TAG, String.format("search range:[%d, %d)", rangeStart, rangeEnd));
+
         // Find first visible item pos and remove previous invisible item
-        int k = 0;
+        int k = rangeStart;
         while (k < getItemCount()) {
             if (isItemVisible(k)) {
-                getItem(k);
+                createItem(k);
                 break;
             } else {
                 removeItem(k);
@@ -805,7 +849,7 @@ public class CustomScrollView extends ViewGroup {
         k = mVisibleItemStart + 1;
         while (k < getItemCount()) {
             if (isItemVisible(k)) {
-                getItem(k);
+                createItem(k);
                 ++k;
             } else {
                 break;
@@ -815,25 +859,13 @@ public class CustomScrollView extends ViewGroup {
 
         // Remove invisible items after last visible item
         k = mVisibleItemEnd;
-        while (k < getItemCount()) {
+        while (k < rangeEnd) {
             removeItem(k);
             ++k;
         }
 
         Log.i(TAG, String.format("visible range:[%d, %d), large item pos:%d",
                 mVisibleItemStart, mVisibleItemEnd, mItemLargeIndex));
-    }
-
-    private View createItem(int pos) {
-        View convertView = null;
-        if (!mRecyclerViews.isEmpty()) {
-            convertView = mRecyclerViews.remove(0);
-            Log.i(TAG, "create a item at " + pos + " with recycler view");
-        } else {
-            Log.i(TAG, "create a new item at " + pos);
-        }
-        View view = mAdapter.getView(pos, convertView, this);
-        return view;
     }
 
     /**
@@ -902,7 +934,7 @@ public class CustomScrollView extends ViewGroup {
 
         if (getVisibleItemCount() > 0) {
             for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
-                View view = getItem(i);
+                View view = createItem(i);
                 Rect rect = getItemRect(i);
                 view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
             }
@@ -952,10 +984,10 @@ public class CustomScrollView extends ViewGroup {
     public interface Adapter {
         int getCount();
 
-        View getView(int position, View convertView, ViewGroup parent);
+        View getView(int position, View convertView, CustomScrollView parent);
     }
 
     public interface OnItemChangedListener {
-        void onChanged(CustomScrollView view, int prev, int cur);
+        void onChanged(CustomScrollView parent, int prev, int cur);
     }
 }

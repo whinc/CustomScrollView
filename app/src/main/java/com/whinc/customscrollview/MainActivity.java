@@ -3,8 +3,8 @@ package com.whinc.customscrollview;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -63,9 +63,10 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 }
+                printVisibleItemRange();
             }
         });
-        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
+//        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
 
         setSupportActionBar(mToolbar);
     }
@@ -88,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_print_large_item_index:
                 Log.i(TAG, "large item index:" + mCustomScrollView.getItemLargeIndex());
                 break;
-            case R.id.action_print_item_tag:
-                printItemTags();
+            case R.id.action_print_visible_item_range:
+                printVisibleItemRange();
                 break;
             case R.id.action_set_3_items:
                 showScrollView(3);
@@ -104,11 +105,11 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void printItemTags() {
-        for (int i = 0; i < mCustomScrollView.getItemCount(); ++i) {
-//            Integer tag = (Integer) mCustomScrollView.getItem(i).getTag();
-//            Log.i(TAG, "Tag of view " + i + ":" + tag);
-        }
+    private void printVisibleItemRange() {
+        Log.i(TAG, String.format("Visible item range:[%d, %d)",
+                mCustomScrollView.getVisibleItemStart(),
+                mCustomScrollView.getVisibleItemEnd()
+        ));
     }
 
     private void foldScrollView() {
@@ -221,30 +222,6 @@ public class MainActivity extends AppCompatActivity {
     static class MyScrollViewAdapter implements CustomScrollView.Adapter {
         private final Context mContext;
         private final int mCount;
-        private @IntegerRes int [] mDrawableList = new int[] {
-                R.drawable.img1,
-                R.drawable.img2,
-                R.drawable.img3,
-                R.drawable.img4,
-                R.drawable.img5,
-                R.drawable.img6,
-                R.drawable.img7,
-                R.drawable.img8,
-                R.drawable.img9,
-                R.drawable.img10,
-                R.drawable.img11,
-                R.drawable.img12,
-                R.drawable.img13,
-                R.drawable.img14,
-                R.drawable.img15,
-                R.drawable.img16,
-                R.drawable.img17,
-                R.drawable.img18,
-                R.drawable.img19,
-                R.drawable.img20,
-                R.drawable.img21,
-                R.drawable.img22,
-        };
 
         public MyScrollViewAdapter(Context context, int count) {
             mContext = context;
@@ -257,21 +234,20 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(int pos, View convertView, ViewGroup parent) {
-            if (pos >= mDrawableList.length) {
-                throw new IndexOutOfBoundsException("size:" + mDrawableList.length + ", index:" + pos);
+        public View getView(int pos, View convertView, CustomScrollView parent) {
+            if (pos < 0 || pos >= mCount) {
+                throw new IndexOutOfBoundsException(
+                        String.format("Valid range:[%d, %d), but pos is %d", 0, mCount, pos));
             }
             View view = convertView;
             if (view == null) {
                 view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
                 ImageView imgView = (ImageView) view.findViewById(R.id.imageView);
-                imgView.setImageResource(mDrawableList[pos]);
+                imgView.setImageBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.img1));
                 Log.i(TAG, "create a new View");
             } else {
                 Log.i(TAG, "return convert View");
             }
-//            Log.i(TAG, "pos:" + pos);
-//            view.setTag(pos);
             return view;
         }
     }

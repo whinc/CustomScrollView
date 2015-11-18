@@ -57,7 +57,7 @@ def pomConfig = {
         dependency{
             groupId "com.whinc.util"
             artifactId "androidtoolkit"
-            "version " "0.1.4"
+            "version " "0.1.6"
             //同dependencies
         }
     }

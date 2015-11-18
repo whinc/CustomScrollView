@@ -1,7 +1,7 @@
 
 ### CustomScrollView
 
-![screenshot](./screenshot.gif)
+![screenshot](./screenshot1.png)
 
 ### Integration （集成）
 

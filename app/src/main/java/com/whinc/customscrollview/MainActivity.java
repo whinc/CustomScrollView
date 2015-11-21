@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 printVisibleItemRange();
             }
         });
-//        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
+        mCustomScrollView.setAdapter(new MyScrollViewAdapter(this, count));
 
         setSupportActionBar(mToolbar);
     }

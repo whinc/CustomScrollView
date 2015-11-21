@@ -560,6 +560,10 @@ public class CustomScrollView extends ViewGroup {
         return 1.0f * mItemHeight / mItemWidth;
     }
 
+    private float getItemLargeWHRation() {
+        return 1.0f * mItemLargeHeight / mItemLargeWidth;
+    }
+
     /**
      * Set the end animator TimeInterpolator, if set null it will use the default
      * {@link android.view.animation.LinearInterpolator}
@@ -675,14 +679,16 @@ public class CustomScrollView extends ViewGroup {
             // Scroll item scale animator
             final Rect newRect = getItemRect(newIndex);
             final Rect oldRect = getItemRect(oldIndex);
-            mScaleAnimator = ValueAnimator.ofInt(newRect.width(), mItemLargeWidth);
+            int startW = newRect.width();
+            final int startH = newRect.height();
+            mScaleAnimator = ValueAnimator.ofInt(startW, getItemLargeWidth());
             mScaleAnimator.setDuration(DURATION / 2);
             mScaleAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
             mScaleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
                     int width = (Integer) animation.getAnimatedValue();
-                    int height = (int) (width * getItemWHRatio());
+                    int height = (int) (width * getItemLargeWHRation());
                     if (scrollDirection > 0) {      // scroll left
                         // newIndex item 右边固定，向左上方扩展
                         newRect.left = newRect.right - width;

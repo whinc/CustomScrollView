@@ -244,6 +244,19 @@ public class MainActivity extends AppCompatActivity {
                 view = LayoutInflater.from(mContext).inflate(R.layout.scrollview_item, parent, false);
                 ImageView imgView = (ImageView) view.findViewById(R.id.imageView);
                 imgView.setImageBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.img1));
+                view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.i(TAG, "onClick!");
+                    }
+                });
+                view.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        Log.i(TAG, "onLongClick!");
+                        return false;
+                    }
+                });
                 Log.i(TAG, "create a new View");
             } else {
                 Log.i(TAG, "return convert View");

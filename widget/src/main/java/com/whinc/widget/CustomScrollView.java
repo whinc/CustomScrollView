@@ -430,7 +430,7 @@ public class CustomScrollView extends ViewGroup {
      */
     private boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (Math.abs(distanceX) < 1) {
-            return true;
+            return false;
         }
 
         distanceX *= mScrollFactor;
@@ -537,7 +537,7 @@ public class CustomScrollView extends ViewGroup {
         }
         updateVisibleItemRange();
         requestLayout();
-        return true;
+        return false;
     }
 
 
@@ -622,12 +622,25 @@ public class CustomScrollView extends ViewGroup {
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 if (getItemCount() <= 0) {
                     Log.i(TAG, "Has no child view!");
-                    return true;
+                    return false;
                 } else {
                     return CustomScrollView.this.onScroll(e1, e2, distanceX, distanceY);
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        onTouchEvent(ev);
+
+        // if user scroll view should not dispatch touch event to child views
+        // which can avoid triggering touch event(like OnClick etc.) of child views.
+        if (ev.getAction() == MotionEvent.ACTION_MOVE) {
+            return true;
+        }
+
+        return super.onInterceptTouchEvent(ev);
     }
 
     @Override

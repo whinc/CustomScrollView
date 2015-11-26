@@ -5,20 +5,16 @@
 
 ### Integration （集成）
 
-I host this library in [jcenter][1] but it has not been published yet.
-
-You need to use in gradle like below(add additional repository address):
+Add dependency to your `build.gradle` file like below:
 
 ```
 repositories {
-    maven {
-        url 'https://dl.bintray.com/whinc/maven'
-    }
-}
+    maven { url "https://jitpack.io" }
+ }
 
 dependencies {
     ...
-    compile 'com.whinc.widget:customscrollview:1.1.9'
+    compile 'com.github.whinc:CustomScrollView:1.2.1'
 }
 ```
 

@@ -19,10 +19,20 @@ android {
     }
 }
 
+//configurations.all {
+//    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+//}
+
+repositories {
+    maven { url "https://jitpack.io" }
+    jcenter()
+ }
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile 'com.jakewharton:butterknife:7.0.1'
-//    compile 'com.whinc.widget:customscrollview:1.1.9'
+//    compile 'com.github.whinc:CustomScrollView:1.2.1'
+//    compile 'com.github.whinc:CustomScrollView:-SNAPSHOT'
     compile project(':widget')
 }

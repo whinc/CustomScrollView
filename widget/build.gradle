@@ -24,4 +24,3 @@ dependencies {
     compile 'com.whinc.util:androidtoolkit:0.1.6'
 }
 
-//apply from: '../bintray.gradle'

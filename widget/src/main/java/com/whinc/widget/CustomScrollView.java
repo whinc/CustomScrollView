@@ -16,6 +16,7 @@ import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
@@ -111,6 +112,7 @@ public class CustomScrollView extends ViewGroup {
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     private boolean mInitialized = false;
+    private float[] mTouchPos = new float[2];
     /**
      * recode view reference
      */
@@ -635,9 +637,20 @@ public class CustomScrollView extends ViewGroup {
         onTouchEvent(ev);
 
         // if user scroll view should not dispatch touch event to child views
-        // which can avoid triggering touch event(like OnClick etc.) of child views.
-        if (ev.getAction() == MotionEvent.ACTION_MOVE) {
-            return true;
+        // which can avoid triggering touch event of child views(like OnClick etc.).
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mTouchPos[0] = ev.getRawX();
+                mTouchPos[1] = ev.getRawY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float deltaX = Math.abs(ev.getRawX() - mTouchPos[0]);
+                float deltaY = Math.abs(ev.getRawY() - mTouchPos[1]);
+                float delta = (float) Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+                if (delta >= ViewConfiguration.getTouchSlop()) {
+                    return true;
+                }
+                break;
         }
 
         return super.onInterceptTouchEvent(ev);

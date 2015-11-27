@@ -112,7 +112,7 @@ public class CustomScrollView extends ViewGroup {
     private Adapter mAdapter;
     private boolean mIsScrolling = false;       // true if ScrollView is scrolling, otherwise is false
     private boolean mInitialized = false;
-    private float[] mTouchPos = new float[2];
+    private float[] mOldTouchPos = new float[2];
     /**
      * recode view reference
      */
@@ -158,14 +158,6 @@ public class CustomScrollView extends ViewGroup {
      */
     public int getVisibleItemEnd() {
         return mVisibleItemEnd;
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        if (getVisibleItemCount() > 0) {
-            updateVisibleItemRange();
-        }
     }
 
     public int getItemWidth() {
@@ -264,7 +256,7 @@ public class CustomScrollView extends ViewGroup {
         mViews = new View[count];
         mViewsRect = new Rect[count];
 
-        int visibleCount = getMaxVisibleItemCount();
+        int visibleCount = getMaxVisibleItemCountOnScreen();
         if (visibleCount < count) {
             mVisibleItemStart = count / 2 - visibleCount / 2;
             mVisibleItemEnd = mVisibleItemStart + visibleCount;
@@ -289,7 +281,7 @@ public class CustomScrollView extends ViewGroup {
      *
      * @return
      */
-    private int getMaxVisibleItemCount() {
+    private int getMaxVisibleItemCountOnScreen() {
         int width = mWidth;
         int visibleCount = 1;
         width -= getLargeItemWM();
@@ -403,8 +395,9 @@ public class CustomScrollView extends ViewGroup {
         // update with and height
         if (mWidth != getMeasuredWidth()) {
             mWidth = getMeasuredWidth();
-            if (mInitialized) {
+            if (mInitialized && getVisibleItemCount() > 0) {
                 adjustTranslation(mItemLargeIndex);
+                updateVisibleItemRange();
             }
         }
         if (mHeight != getMeasuredHeight()) {
@@ -418,11 +411,27 @@ public class CustomScrollView extends ViewGroup {
         // Measure children
         if (getVisibleItemCount() > 0) {
             for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
-                View child = createItem(i);
+                View child = getItem(i) == null ? createItem(i) : getItem(i);
                 Rect rect = getItemRect(i);
                 int widthSpec = MeasureSpec.makeMeasureSpec(rect.width(), MeasureSpec.EXACTLY);
                 int heightSpec = MeasureSpec.makeMeasureSpec(rect.height(), MeasureSpec.EXACTLY);
                 measureChild(child, widthSpec, heightSpec);
+            }
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        if (isInEditMode()) {
+            return;
+        }
+
+        if (getVisibleItemCount() > 0) {
+            for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
+                View view = getItem(i) == null ? createItem(i) : getItem(i);
+                Rect rect = getItemRect(i);
+                view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
+                Log.i(TAG, String.format("onLayout:%d->%d, changed:%b", mVisibleItemStart, mVisibleItemEnd, changed));
             }
         }
     }
@@ -640,12 +649,12 @@ public class CustomScrollView extends ViewGroup {
         // which can avoid triggering touch event of child views(like OnClick etc.).
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mTouchPos[0] = ev.getRawX();
-                mTouchPos[1] = ev.getRawY();
+                mOldTouchPos[0] = ev.getRawX();
+                mOldTouchPos[1] = ev.getRawY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                float deltaX = Math.abs(ev.getRawX() - mTouchPos[0]);
-                float deltaY = Math.abs(ev.getRawY() - mTouchPos[1]);
+                float deltaX = Math.abs(ev.getRawX() - mOldTouchPos[0]);
+                float deltaY = Math.abs(ev.getRawY() - mOldTouchPos[1]);
                 float delta = (float) Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
                 if (delta >= ViewConfiguration.getTouchSlop()) {
                     return true;
@@ -840,10 +849,6 @@ public class CustomScrollView extends ViewGroup {
      * <p>Get visible item in specified position. Return null if the item doesn't exist</p>
      */
     public View getItem(int pos) {
-        if (pos < 0 || pos >= getItemCount()) {
-            throw new IndexOutOfBoundsException(
-                    String.format("valid range:[%d, %d], but index:%d", 0, getItemCount() - 1, pos));
-        }
         return mViews[pos];
     }
 
@@ -860,40 +865,30 @@ public class CustomScrollView extends ViewGroup {
     private void updateVisibleItemRange() {
 
         // reduce update range to improve the search performance
-        int rangeStart = Math.max(0, mItemLargeIndex - (getMaxVisibleItemCount() / 2 + 1));
-        int rangeEnd = Math.min(getItemCount(), mItemLargeIndex + (getMaxVisibleItemCount() / 2 + 1) + 1);
+        int rangeStart = Math.max(0, mItemLargeIndex - (getMaxVisibleItemCountOnScreen() / 2 + 1));
+        int rangeEnd = Math.min(getItemCount(), mItemLargeIndex + (getMaxVisibleItemCountOnScreen() / 2 + 1) + 1);
         Log.i(TAG, String.format("search range:[%d, %d)", rangeStart, rangeEnd));
 
-        // Find first visible item pos and remove previous invisible item
-        int k = rangeStart;
-        while (k < getItemCount()) {
-            if (isItemVisible(k)) {
-                createItem(k);
-                break;
+        boolean findFirstVisible = false;
+        boolean findLastVisible = false;
+        for (int i = rangeStart; i < rangeEnd; ++i) {
+            if (isItemVisible(i)) {
+                createItem(i);
+                if (!findFirstVisible) {
+                    mVisibleItemStart = i;
+                    findFirstVisible = true;
+                }
             } else {
-                removeItem(k);
-                ++k;
+                removeItem(i);
+                if (findFirstVisible && !findLastVisible) {
+                    mVisibleItemEnd = i;
+                    findLastVisible = true;
+                }
             }
         }
-        mVisibleItemStart = k;
 
-        // Find last visible item start from first visible item
-        k = mVisibleItemStart + 1;
-        while (k < getItemCount()) {
-            if (isItemVisible(k)) {
-                createItem(k);
-                ++k;
-            } else {
-                break;
-            }
-        }
-        mVisibleItemEnd = k;
-
-        // Remove invisible items after last visible item
-        k = mVisibleItemEnd;
-        while (k < rangeEnd) {
-            removeItem(k);
-            ++k;
+        if (findFirstVisible && !findLastVisible) {
+            mVisibleItemEnd = rangeEnd;
         }
 
         Log.i(TAG, String.format("visible range:[%d, %d), large item pos:%d",
@@ -922,6 +917,7 @@ public class CustomScrollView extends ViewGroup {
         mItemLargeIndex = Math.min(Math.max(itemLargeIndex, 0), getItemCount() - 1);
         adjustTranslation(mItemLargeIndex);
         adjustItemSize(mItemLargeIndex);
+        updateVisibleItemRange();
 
         if (mItemChangedListener != null) {
             mItemChangedListener.onChanged(this, mItemLargeIndex, mItemLargeIndex);
@@ -956,21 +952,6 @@ public class CustomScrollView extends ViewGroup {
             startX -= getItemWM() * n;
         }
         return Math.round(startX);
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        if (isInEditMode()) {
-            return;
-        }
-
-        if (getVisibleItemCount() > 0) {
-            for (int i = mVisibleItemStart; i < mVisibleItemEnd; ++i) {
-                View view = createItem(i);
-                Rect rect = getItemRect(i);
-                view.layout(mTranslationX + rect.left, rect.top, mTranslationX + rect.right, rect.bottom);
-            }
-        }
     }
 
     /**

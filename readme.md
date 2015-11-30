@@ -70,9 +70,13 @@ customScrollView.setAdapter(new CustomScrollView.Adapter() {
     }
 
     @Override
-    public View getView(CustomScrollView parent, int pos) {
-        View view = new ImageView(SecondActivity.this);
-        view.setBackgroundResource(R.drawable.test_image);
+    public View getView(int pos, View convertView, CustomScrollView parent) {
+        View view = convertView;
+        if (view == null) {
+            // create view
+        } else {
+            // reuse view
+        }
         return view;
     }
 });
